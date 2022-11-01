@@ -1,6 +1,6 @@
 Package: psrcctpp
 Type: Package
-Title: Tools to utilize Census Transportation Planning Package (CTPP) data via the AASHTO API.
+Title: Tools to utilize Census Transportation Planning Package (CTPP) data via the AASHTO API
 Version: 0.1.0
 Authors@R: c(
     person("Craig", "Helmann", email = "chelmann@psrc.org", role = "aut"),
@@ -9,16 +9,19 @@ Authors@R: c(
     person("Chris", "Peak", email = "cpeak@psrc.org", role = "aut"),
     person("Michael", "Jensen", email = "mjensen@psrc.org", role = "aut"))
 Maintainer: Suzanne Childress <schildress@psrc.org>
-Description: TBA.
+Description: Tools to utilize Census Transportation Planning Package (CTPP) data via the AASHTO API.
+License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.1
 Imports: 
-    httr,
-    jsonlite,
     magrittr,
     dplyr,
-    data.table
+    data.table,
+    sf,
+    stringr,
+    rlang,
+    tigris
 Suggests: 
     rmarkdown,
     knitr,
