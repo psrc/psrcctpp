@@ -37,9 +37,11 @@ get_psrc_places <- function(year){
 #' @import data.table
 #' @export
 get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
+  # Declare variables (to avoid package warnings)
   scale_refs <- scale_ref <- scale_filter <- scale_label <- dir <- val_lookup <- dt <- NULL
   rgeo <- wgeo <- geo_lookup <- res_geoid <- work_geoid <- res_label <- work_label <- NULL
-  psrc_places <- targetfile <- pat <- NAME <- GEOID <- NULL
+  psrc_places <- targetfile <- pat <- NAME <- GEOID <- category <- NULL
+
   # Create geography prefix lookup per scale
   scale_refs <- data.frame(
     scale_id   =sprintf("%02i",c(2:3,5,11,22:23,25,31,42:43,45,50:51,54)),
@@ -50,7 +52,7 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
   scale_ref <- scale_refs[scale_label==scale]
   scale_filter <- paste0("^C", scale_refs$scale_id, "\\w+",collapse="|")
 
-  # Read file, parse geoid, filter to specified
+  # Value & geography lookup table ETL
   dir <- dplyr::if_else(dyear==2010,"2006_2010/","2012_2016/") %>% paste0("X:/DSA/Census/CTPP/", .)
   val_lookup <- paste0(dir,"acs_ctpp_2012thru2016_table_shell.txt") %>% fread() %>% setkeyv(c("TBLID","LINENO"))
   rgeo <- paste0(dir,"acs_ctpp_2012thru2016_res_geo.txt") %>% fread() %>% .[,5:6] %>%
@@ -59,8 +61,11 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
     .[grepl(scale_filter, GEOID)] %>% .[, GEOID:=str_replace(GEOID, "^C\\w+US", "")]
   geo_lookup <- rbind(rgeo, wgeo) %>% unique() %>% setkeyv(c("GEOID"))
   rm(rgeo, wgeo)
+
+  # Load primary datatable; filter by scale, [geoid]; attach value and geography labels
   targetfile <- paste0("WA_", as.character(dyear-4), "thru", dyear, "_") %>% paste0(dir, ., data_table, ".csv")
-  dt <- fread(targetfile) %>% .[grepl(paste0("^C",scale_ref$scale_id), GEOID)] %>% setkeyv(c("TBLID","LINENO"))
+  dt <- fread(targetfile) %>% .[grepl(paste0("^C",scale_ref$scale_id), GEOID)] %>% setkeyv(c("TBLID","LINENO")) %>%
+    .[val_lookup, category:=LDESC, on=key(.)]
   if(!is.na(scale_ref$res_len)){
     dt %<>% .[, res_geoid:=str_sub(str_extract(GEOID,"US\\d+"),3L,(2+scale_ref$res_len))]
     }
@@ -81,6 +86,6 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
   dt[geo_lookup, res_label:=NAME, on=.(res_geoid=GEOID)]
   dt[geo_lookup, work_label:=NAME, on=.(work_geoid=GEOID)]
   dt %<>% .[, c("GEOID","SOURCE"):=NULL] %>%
-    setcolorder(c("TBLID","LINENO","res_geoid", "res_label", "work_geoid", "work_label", "DESC", "EST", "MOE"))
+    setcolorder(c("TBLID","LINENO","res_geoid", "res_label", "work_geoid", "work_label", "category", "EST", "MOE"))
   return(dt)
 }
