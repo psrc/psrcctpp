@@ -45,11 +45,12 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
   # Create geography prefix lookup per scale
   scale_refs <- data.frame(
     scale_id   =sprintf("%02i",c(2:3,5,11,22:23,25,31,42:43,45,50:51,54)),
-    scale_label=c(do.call(paste, expand.grid(c("state","county","place","tract"), c(" (res)"," (work)"))),
+    table_type =c(rep(1,4),rep(2,4),rep(3,6)),
+    scale_label=c(rep(c("state","county","place","tract"),2),
                   "state-state","county-county","place-place","place-county","county-place","tract-tract"),
     res_len    =c(2,5,7,11, rep(NA_integer_,4), 2,5,7,7,5,11),
     work_len   =c(rep(NA_integer_,4), 2,5,7,11, 2,5,7,5,7,11)) %>% setDT()
-  scale_ref <- scale_refs[scale_label==scale]
+  scale_ref <- scale_refs[scale_label==scale & str_sub(data_table,2L,2L)==table_type]
   scale_filter <- paste0("^C", scale_refs$scale_id, "\\w+",collapse="|")
 
   # Value & geography lookup table ETL
@@ -66,11 +67,14 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
   targetfile <- paste0("WA_", as.character(dyear-4), "thru", dyear, "_") %>% paste0(dir, ., data_table, ".csv")
   dt <- fread(targetfile) %>% .[grepl(paste0("^C",scale_ref$scale_id), GEOID)] %>% setkeyv(c("TBLID","LINENO")) %>%
     .[val_lookup, category:=LDESC, on=key(.)]
-  if(!is.na(scale_ref$res_len)){
+  dt[, (c("res_geoid","res_label","work_geoid","work_label")):=""]
+  if(scale_ref$table_type %in% c(1,3)){
     dt %<>% .[, res_geoid:=str_sub(str_extract(GEOID,"US\\d+"),3L,(2+scale_ref$res_len))]
+    dt[geo_lookup, res_label:=NAME, on=.(res_geoid=GEOID)]
     }
-  if(!is.na(scale_ref$work_len)){
+  if(scale_ref$table_type %in% c(2,3)){
     dt %<>% .[, work_geoid:=str_sub(str_extract(GEOID,"US\\d+"),-(scale_ref$work_len))]
+    dt[geo_lookup, work_label:=NAME, on=.(work_geoid=GEOID)]
     }
   if(!rlang::is_empty(geoids)){
     dt %<>% .[(res_geoid %in% geoids)|(work_geoid %in% geoids)]
@@ -83,8 +87,8 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
       dt %<>% .[(grepl(pat, res_geoid))|(grepl(pat, work_geoid))]
     }
   }
-  dt[geo_lookup, res_label:=NAME, on=.(res_geoid=GEOID)]
-  dt[geo_lookup, work_label:=NAME, on=.(work_geoid=GEOID)]
+
+
   dt %<>% .[, c("GEOID","SOURCE"):=NULL] %>%
     setcolorder(c("TBLID","LINENO","res_geoid", "res_label", "work_geoid", "work_label", "category", "EST", "MOE"))
   return(dt)
