@@ -56,12 +56,13 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
   # Value & geography lookup table ETL
   dir <- dplyr::if_else(dyear==2010,"2006_2010/","2012_2016/") %>% paste0("X:/DSA/Census/CTPP/", .)
   val_lookup <- paste0(dir,"acs_ctpp_2012thru2016_table_shell.txt") %>% fread() %>% setkeyv(c("TBLID","LINENO"))
-  rgeo <- paste0(dir,"acs_ctpp_2012thru2016_res_geo.txt") %>% fread() %>% .[,5:6] %>%
-    .[grepl(scale_filter, GEOID)] %>% .[, GEOID:=str_replace(GEOID, "^C\\w+US", "")]
-  wgeo <- paste0(dir,"acs_ctpp_2012thru2016_pow_geo.txt") %>% fread() %>% .[,5:6] %>%
-    .[grepl(scale_filter, GEOID)] %>% .[, GEOID:=str_replace(GEOID, "^C\\w+US", "")]
-  geo_lookup <- rbind(rgeo, wgeo) %>% unique() %>% setkeyv(c("GEOID"))
-  rm(rgeo, wgeo)
+  # rgeo <- paste0(dir,"acs_ctpp_2012thru2016_res_geo.txt") %>% fread() %>% .[,5:6] %>%
+  #   .[grepl(scale_filter, GEOID)] %>% .[, GEOID:=str_replace(GEOID, "^C\\w+US", "")]
+  # wgeo <- paste0(dir,"acs_ctpp_2012thru2016_pow_geo.txt") %>% fread() %>% .[,5:6] %>%
+  #   .[grepl(scale_filter, GEOID)] %>% .[, GEOID:=str_replace(GEOID, "^C\\w+US", "")]
+  # geo_lookup <- rbind(rgeo, wgeo) %>% unique() %>% setkeyv(c("GEOID"))
+  # rm(rgeo, wgeo)
+  geo_lookup <- paste0(dir,"acs_ctpp_2012thru2016_all_geo.txt") %>% fread() %>% setkeyv(c("GEOID"))
 
   # Load primary datatable; filter by scale, [geoid]; attach value and geography labels
   targetfile <- paste0("WA_", as.character(dyear-4), "thru", dyear, "_") %>% paste0(dir, ., data_table, ".csv")
