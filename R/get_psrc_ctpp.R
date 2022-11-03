@@ -103,13 +103,12 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
 #'
 #' Given specific form by related \code{\link{ctpp_stat}} functions.
 #' @inheritParams ctpp_stat
-#' @param stat_type "sum", "share"
+#' @param stat_type for now, "sum" is only option
 #'
 #' @importFrom dplyr ungroup group_by filter across summarize
 #' @importFrom tidyselect all_of
 #' @importFrom tidycensus moe_sum
 #' @import data.table
-#' @export
 psrc_ctpp_stat <- function(df, group_vars=NULL, stat_type="sum", incl_na=FALSE){
   sum_estimate <- sum_moe <- NULL
   if(all(group_vars!="keep_existing")){df %<>% ungroup()}                                          # "keep_existing" is power-user option for srvyr::combine() groupings;
