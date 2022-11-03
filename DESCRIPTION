@@ -21,7 +21,9 @@ Imports:
     sf,
     stringr,
     rlang,
-    tigris
+    tigris,
+    tidycensus,
+    tidyselect
 Suggests: 
     rmarkdown,
     knitr,

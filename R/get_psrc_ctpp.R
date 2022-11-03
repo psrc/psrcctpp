@@ -98,3 +98,46 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
     setcolorder(c("table_id","line_id","res_geoid", "res_label", "work_geoid", "work_label", "category", "estimate", "moe"))
   return(dt)
 }
+
+#' Generic call for CTPP summary statistics
+#'
+#' Given specific form by related \code{\link{ctpp_stat}} functions.
+#' @inheritParams ctpp_stat
+#' @param stat_type "sum", "share"
+#'
+#' @importFrom dplyr ungroup group_by filter across summarize
+#' @importFrom tidyselect all_of
+#' @importFrom tidycensus moe_sum
+#' @import data.table
+#' @export
+psrc_ctpp_stat <- function(df, group_vars=NULL, stat_type="sum", incl_na=FALSE){
+  sum_estimate <- sum_moe <- NULL
+  if(all(group_vars!="keep_existing")){df %<>% ungroup()}                                          # "keep_existing" is power-user option for srvyr::combine() groupings;
+  if(all(!is.null(group_vars) & group_vars!="keep_existing")){                                     # -- otherwise the package ungroups before and afterward
+    if(incl_na==FALSE){df %<>% filter(if_all(all_of(group_vars), ~ !is.na(.)))}                    # Allows users to exclude w/o removing observations from the data object itself
+    df %<>% group_by(across(c(table_id, line_id, all_of(group_vars), category)))
+  }
+  if(stat_type=="sum"){
+    rs <- summarize(df, sum_estimate=sum(estimate, na.rm=TRUE),
+                        sum_moe=tidycensus::moe_sum(moe, estimate))
+  }
+  if(all(group_vars!="keep_existing")){df %<>% ungroup()}
+  return(rs)
+}
+
+#' CTPP summary statistics
+#'
+#' @param ctpp_data result of get_psrc_ctpp function
+#' @param group_vars grouping variables, original or added
+#' @param incl_na whether to include NA lines
+#' @name ctpp_stat
+#' @return A table with the variable names and labels, summary statistic and margin of error
+NULL
+
+#' @rdname ctpp_stat
+#' @title Generate CTPP sums
+#' @export
+psrc_ctpp_sum <- function(df, group_vars=NULL, incl_na=TRUE){
+  rs <- psrc_ctpp_stat(df=df, stat_type="sum", group_vars=group_vars, incl_na=incl_na)
+  return(rs)
+}
