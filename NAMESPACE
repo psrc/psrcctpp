@@ -2,7 +2,6 @@
 
 export(get_psrc_ctpp)
 export(get_psrc_places)
-export(psrc_ctpp_stat)
 export(psrc_ctpp_sum)
 import(data.table)
 importFrom(dplyr,across)

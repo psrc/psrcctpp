@@ -9,7 +9,7 @@ psrc_ctpp_stat(df, group_vars = NULL, stat_type = "sum", incl_na = FALSE)
 \arguments{
 \item{group_vars}{grouping variables, original or added}
 
-\item{stat_type}{"sum", "share"}
+\item{stat_type}{for now, "sum" is only option}
 
 \item{incl_na}{whether to include NA lines}
 }
