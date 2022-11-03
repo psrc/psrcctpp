@@ -5,6 +5,7 @@ NULL
 globalVariables(c(":=", "!!", ".", "enquos"))
 psrc_counties <- c("033","035","053","061")
 
+str2num <- function(x){as.numeric(stringr::str_replace_all(x,"(\\+/-)|,",""))}
 `%not_in%` <- Negate(`%in%`)
 
 #' List Census Places within the PSRC region
@@ -68,7 +69,9 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
 
   # Load primary datatable; filter by scale, [geoid]; attach value and geography labels
   targetfile <- paste0("WA_", as.character(dyear-4), "thru", dyear, "_") %>% paste0(dir, ., data_table, ".csv")
-  dt <- fread(targetfile) %>% .[grepl(paste0("^C",scale_ref$scale_id), GEOID)] %>% setkeyv(c("TBLID","LINENO")) %>%
+  dt <- fread(targetfile, showProgress=FALSE) %>%
+    .[, c("EST", "MOE"):=lapply(.SD, str2num), .SDcols=c("EST", "MOE")] %>%
+    .[grepl(paste0("^C",scale_ref$scale_id), GEOID)] %>% setkeyv(c("TBLID","LINENO")) %>%
     .[val_lookup, category:=LDESC, on=key(.)]
   dt[, (c("res_geoid","res_label","work_geoid","work_label")):=""]
   if(scale_ref$table_type %in% c(1,3)){
@@ -90,9 +93,8 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
       dt %<>% .[(grepl(pat, res_geoid))|(grepl(pat, work_geoid))]
     }
   }
-
-
   dt %<>% .[, c("GEOID","SOURCE"):=NULL] %>%
-    setcolorder(c("TBLID","LINENO","res_geoid", "res_label", "work_geoid", "work_label", "category", "EST", "MOE"))
+    setnames(c("TBLID","LINENO", "EST", "MOE"),c(c("table_id","line_id", "estimate", "moe"))) %>%
+    setcolorder(c("table_id","line_id","res_geoid", "res_label", "work_geoid", "work_label", "category", "estimate", "moe"))
   return(dt)
 }
