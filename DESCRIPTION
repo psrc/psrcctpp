@@ -15,15 +15,16 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.1
 Imports: 
-    magrittr,
-    dplyr,
     data.table,
+    dplyr,
+    magrittr,
+    psrccensus,
+    rlang,
     sf,
     stringr,
-    rlang,
-    tigris,
     tidycensus,
-    tidyselect
+    tidyselect,
+    tigris
 Suggests: 
     rmarkdown,
     knitr,

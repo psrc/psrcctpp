@@ -8,22 +8,19 @@ psrc_counties <- c("033","035","053","061")
 str2num <- function(x){as.numeric(stringr::str_replace_all(x,"(\\+/-)|,",""))}
 `%not_in%` <- Negate(`%in%`)
 
-#' List Census Places within the PSRC region
+#' Correspondence table for CTPP codes, table type, and scale
 #'
-#' @param year of census geography
-#' @return string vector of Place FIPS codes
+#' @return correspondence table
 #'
-#' @importFrom sf st_transform st_buffer st_join st_intersects st_drop_geometry
-#' @importFrom dplyr filter select rename
-#' @export
-get_psrc_places <- function(year){
-  NAME <- COUNTYFP <- GEOID <- geometry <- psrc_region <- place_lookup <- counties <-NULL
-  psrc_region <- tigris::counties("53", cb=TRUE) %>%
-    filter(COUNTYFP %in% psrc_counties) %>% dplyr::summarize() %>%
-    st_transform(2285) # planar projection to allow intersect
-  place_lookup <- tigris::places("53", year=year, cb=TRUE) %>%
-    select(c(GEOID, NAME, geometry)) %>% st_transform(2285) %>% st_buffer(-1) %>% # To avoid any overlap
-    st_join(psrc_region, join=st_intersects, left=FALSE) %>% st_drop_geometry() %>% unique()
+scale_code_lookup <- function(){
+scale_refs <- data.frame(
+  scale_id   =sprintf("%02i",c(2:3,5,11,22:23,25,31,42:43,45,50:51,54)),
+  table_type =c(rep(1,4),rep(2,4),rep(3,6)),
+  scale_label=c(rep(c("state","county","place","tract"),2),
+                "state-state","county-county","place-place","place-county","county-place","tract-tract"),
+  res_len    =c(2,5,7,11, rep(NA_integer_,4), 2,5,7,7,5,11),
+  work_len   =c(rep(NA_integer_,4), 2,5,7,11, 2,5,7,5,7,11)) %>% setDT()
+return(scale_refs)
 }
 
 #' Retrieve CTPP data
@@ -44,14 +41,8 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
   psrc_places <- targetfile <- pat <- NAME <- GEOID <- category <- NULL
 
   # Create geography prefix lookup per scale
-  scale_refs <- data.frame(
-    scale_id   =sprintf("%02i",c(2:3,5,11,22:23,25,31,42:43,45,50:51,54)),
-    table_type =c(rep(1,4),rep(2,4),rep(3,6)),
-    scale_label=c(rep(c("state","county","place","tract"),2),
-                  "state-state","county-county","place-place","place-county","county-place","tract-tract"),
-    res_len    =c(2,5,7,11, rep(NA_integer_,4), 2,5,7,7,5,11),
-    work_len   =c(rep(NA_integer_,4), 2,5,7,11, 2,5,7,5,7,11)) %>% setDT()
-  scale_ref <- scale_refs[scale_label==scale & str_sub(data_table,2L,2L)==table_type]
+  scale_ref <- scale_code_lookup() %>%
+    .[scale_label==scale & str_sub(data_table,2L,2L)==table_type]
   scale_filter <- paste0("^C", scale_refs$scale_id, "\\w+",collapse="|")
 
   # Value & geography lookup table ETL
@@ -86,7 +77,7 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
     dt %<>% .[(res_geoid %in% geoids)|(work_geoid %in% geoids)]
   }else{
     if(scale_ref$scale_id %in% c(5,25,45,50,51)){
-      psrc_places <-  get_psrc_places(dyear)
+      psrc_places <-  psrccensus::get_psrc_places(dyear) %>% sf::st_drop_geometry() %>% unique()
       dt %<>% .[(res_geoid %in% psrc_places$GEOID)|(work_geoid %in% psrc_places$GEOID)]
     }else{
       pat <- paste0("^53", psrc_counties, collapse="|")
