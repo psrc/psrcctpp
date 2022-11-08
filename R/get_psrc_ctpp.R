@@ -85,8 +85,10 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
     }
   }
   dt %<>% .[, c("GEOID","SOURCE"):=NULL] %>%
-    setnames(c("TBLID","LINENO", "EST", "MOE"),c(c("table_id","line_id", "estimate", "moe"))) %>%
-    setcolorder(c("table_id","line_id","res_geoid", "res_label", "work_geoid", "work_label", "category", "estimate", "moe"))
+    setnames(c("TBLID","LINENO", "EST", "MOE"),
+             c(c("table_id","line_id", "estimate", "estimate_moe"))) %>%
+    setcolorder(c("table_id","line_id","res_geoid", "res_label", "work_geoid", "work_label",
+                  "category", "estimate", "estimate_moe"))
   return(dt)
 }
 
@@ -110,16 +112,9 @@ psrc_ctpp_stat <- function(df, group_vars, stat_type="sum", incl_na=FALSE){
   }
   if(stat_type=="sum"){
     rs <- suppressMessages(summarize(df, sum_estimate=sum(estimate, na.rm=TRUE),
-                        sum_moe=tidycensus::moe_sum(moe, estimate)) %>% ungroup())
+            sum_moe=tidycensus::moe_sum(estimate_moe, estimate)) %>% ungroup()) %>%
+      rename(estimate=sum_estimate, estimate_moe=sum_moe)
   }
-  if(!is_empty(rs$category=="Total")){
-    totals <- filter(rs, category=="Total") %>% select(-c(table_id, line_id, category)) %>%
-      rename(total_estimate=sum_estimate, total_moe=sum_moe)
-    rs %<>% inner_join(totals, by=group_vars, na_matches="never") %>%
-      mutate(share=sum_estimate/total_estimate,
-             share_moe=moe_prop(sum_estimate, total_estimate,sum_moe, total_moe)) %>%
-      select(-c(total_estimate, total_moe))
-    }
   if(all(group_vars!="keep_existing")){df %<>% ungroup()}
   return(rs)
 }
@@ -139,4 +134,27 @@ NULL
 psrc_ctpp_sum <- function(df, group_vars=NULL, incl_na=TRUE){
   rs <- psrc_ctpp_stat(df=df, stat_type="sum", group_vars=group_vars, incl_na=incl_na)
   return(rs)
+}
+
+#' Add shares to CTPP table
+#'
+#' @param df dataframe, either result of get_psrc_ctpp or psrc_ctpp_stat
+#' @return dataframe with share & share_moe
+#'
+#' @importFrom dplyr filter select select_if rename inner_join mutate
+#' @importFrom rlang is_empty
+#' @importFrom stringr str_replace
+#' @importFrom tidycensus moe_prop
+#' @import data.table
+#' @export
+ctpp_shares <- function(df){
+  if(is_empty(df$category=="Total")){return(df)}else{
+    totals <- filter(df, category=="Total") %>% select_if(!grepl("^table_id$|^line_id$|^category$", colnames(.))) %>%
+      rename_with(~str_replace(., "estimate", "total"), grep("^estimate$|^estimate_moe$", colnames(.), value=TRUE))
+    rs <- suppressMessages(inner_join(df, totals, na_matches="never") %>%
+      mutate(share=estimate/total,
+             share_moe=moe_prop(estimate, total, estimate_moe, total_moe)) %>%
+      select(-c(total, total_moe)))
+    return(rs)
+  }
 }
