@@ -4,6 +4,12 @@
     <loc>https://psrc.github.io/psrcctpp/404.html</loc>
   </url>
   <url>
+    <loc>https://psrc.github.io/psrcctpp/articles/index.html</loc>
+  </url>
+  <url>
+    <loc>https://psrc.github.io/psrcctpp/articles/psrcctpp_basics.html</loc>
+  </url>
+  <url>
     <loc>https://psrc.github.io/psrcctpp/authors.html</loc>
   </url>
   <url>
@@ -13,18 +19,21 @@
     <loc>https://psrc.github.io/psrcctpp/LICENSE-text.html</loc>
   </url>
   <url>
+    <loc>https://psrc.github.io/psrcctpp/reference/ctpp_shares.html</loc>
+  </url>
+  <url>
     <loc>https://psrc.github.io/psrcctpp/reference/ctpp_stat.html</loc>
   </url>
   <url>
     <loc>https://psrc.github.io/psrcctpp/reference/get_psrc_ctpp.html</loc>
   </url>
   <url>
-    <loc>https://psrc.github.io/psrcctpp/reference/get_psrc_places.html</loc>
-  </url>
-  <url>
     <loc>https://psrc.github.io/psrcctpp/reference/index.html</loc>
   </url>
   <url>
     <loc>https://psrc.github.io/psrcctpp/reference/psrc_ctpp_stat.html</loc>
+  </url>
+  <url>
+    <loc>https://psrc.github.io/psrcctpp/reference/scale_code_lookup.html</loc>
   </url>
 </urlset>
