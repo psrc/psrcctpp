@@ -11,7 +11,7 @@ get_psrc_ctpp(dyear = 2016, data_table, scale, geoids = NULL)
 
 \item{data_table}{requested data table as string, e.g. "A302103"}
 
-\item{scale}{"state", "county", "place", or "tract" for residence/workplace tables; "state-state", "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables}
+\item{scale}{"county", "place", or "tract" for residence/workplace tables; "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables}
 
 \item{geoids}{optional string vector of GEOID codes to limit the table}
 }

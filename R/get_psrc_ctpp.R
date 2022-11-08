@@ -27,7 +27,7 @@ return(scale_refs)
 #'
 #' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
 #' @param data_table requested data table as string, e.g. "A302103"
-#' @param scale "state", "county", "place", or "tract" for residence/workplace tables; "state-state", "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
+#' @param scale "county", "place", or "tract" for residence/workplace tables; "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
 #' @param geoids optional string vector of GEOID codes to limit the table
 #' @return data table
 #'
@@ -96,21 +96,30 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
 #' @inheritParams ctpp_stat
 #' @param stat_type for now, "sum" is only option
 #'
-#' @importFrom dplyr ungroup group_by filter across summarize
+#' @importFrom dplyr ungroup group_by filter across summarize if_all
+#' @importFrom rlang is_empty
 #' @importFrom tidyselect all_of
 #' @importFrom tidycensus moe_sum
 #' @import data.table
-psrc_ctpp_stat <- function(df, group_vars=NULL, stat_type="sum", incl_na=FALSE){
+psrc_ctpp_stat <- function(df, group_vars, stat_type="sum", incl_na=FALSE){
   sum_estimate <- sum_moe <- NULL
-  if(all(group_vars!="keep_existing")){df %<>% ungroup()}                                          # "keep_existing" is power-user option for srvyr::combine() groupings;
+  if(all(group_vars!="keep_existing")){df %<>% ungroup()}                                          # "keep_existing" is power-user option to maintain more complex groupings;
   if(all(!is.null(group_vars) & group_vars!="keep_existing")){                                     # -- otherwise the package ungroups before and afterward
     if(incl_na==FALSE){df %<>% filter(if_all(all_of(group_vars), ~ !is.na(.)))}                    # Allows users to exclude w/o removing observations from the data object itself
     df %<>% group_by(across(c(table_id, line_id, all_of(group_vars), category)))
   }
   if(stat_type=="sum"){
-    rs <- summarize(df, sum_estimate=sum(estimate, na.rm=TRUE),
-                        sum_moe=tidycensus::moe_sum(moe, estimate))
+    rs <- suppressMessages(summarize(df, sum_estimate=sum(estimate, na.rm=TRUE),
+                        sum_moe=tidycensus::moe_sum(moe, estimate)) %>% ungroup())
   }
+  if(!is_empty(rs$category=="Total")){
+    totals <- filter(rs, category=="Total") %>% select(-c(table_id, line_id, category)) %>%
+      rename(total_estimate=sum_estimate, total_moe=sum_moe)
+    rs %<>% inner_join(totals, by=group_vars, na_matches="never") %>%
+      mutate(share=sum_estimate/total_estimate,
+             share_moe=moe_prop(sum_estimate, total_estimate,sum_moe, total_moe)) %>%
+      select(-c(total_estimate, total_moe))
+    }
   if(all(group_vars!="keep_existing")){df %<>% ungroup()}
   return(rs)
 }

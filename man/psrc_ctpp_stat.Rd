@@ -4,7 +4,7 @@
 \alias{psrc_ctpp_stat}
 \title{Generic call for CTPP summary statistics}
 \usage{
-psrc_ctpp_stat(df, group_vars = NULL, stat_type = "sum", incl_na = FALSE)
+psrc_ctpp_stat(df, group_vars, stat_type = "sum", incl_na = FALSE)
 }
 \arguments{
 \item{group_vars}{grouping variables, original or added}
