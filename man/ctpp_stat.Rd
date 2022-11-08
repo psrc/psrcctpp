@@ -5,14 +5,14 @@
 \alias{psrc_ctpp_sum}
 \title{CTPP summary statistics}
 \usage{
-psrc_ctpp_sum(df, group_vars = NULL, incl_na = TRUE)
+psrc_ctpp_sum(ctpp_data, group_vars = NULL, incl_na = TRUE)
 }
 \arguments{
+\item{ctpp_data}{result of get_psrc_ctpp function}
+
 \item{group_vars}{grouping variables, original or added}
 
 \item{incl_na}{whether to include NA lines}
-
-\item{ctpp_data}{result of get_psrc_ctpp function}
 }
 \value{
 A table with the variable names and labels, summary statistic and margin of error
