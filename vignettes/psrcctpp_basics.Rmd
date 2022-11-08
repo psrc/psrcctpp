@@ -1,0 +1,68 @@
+---
+title: "psrcctpp basics"
+description: >
+  Learn to retrieve and summarize CTPP data
+output: html_vignette
+vignette: >
+  %\VignetteIndexEntry{psrcctpp basics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Why CTPP data?
+
+Although it is derived from the American Community Survey (ACS), CTPP includes data items that are not published in the ACS release, and at scales substantially smaller than ACS Public Use Microdata (PUMS). As with other ACS products, it is consistent across scales, supports longitudinal analysis, and includes margins of error. It is the most authoritative nationwide, Census Bureau source for transportation flow data in particular.
+
+The primary drawback to CTPP data is the approximately 3-year lag to develop it; since it's restricted to non-overlapping 5-year spans, it may involve a remove of nearly seven years from the conclusion of the first year in a reported span. Issues such as the transportation impacts accompanying the 2020 Covid pandemic have a long signature in the data (i.e. the next data without it would arrive around 2029).
+
+## Retrieve CTPP data
+
+The psrcctpp package retrieves data one table at a time, with the **`get_psrc_ctpp()`** function. Its parameters are:
+
+  * **dyear** - aka data year, the last year of the CTPP span (i.e. 2016 for 2012-16)
+  * **table** - identifier (string) for the table you want
+  * **scale** - for residence or workplace tables, either "county", "place", or "tract"
+            for flow tables, either "county-county", "place-place", "place-county", "county-place", or "tract-tract"
+            "block group" scale will be available starting with the 2017-21 survey.
+  * (optional) list of **geoids** to restrict the table further
+
+The result is a standard dataframe. Notice that all results will include both res_geoid, res_label and work_geoid, work_label fields, but the work fields will be blank for residential tables and the residence fields will be blank for workplace tables. Strings are by default stored as characters rather than Factor datatype.
+
+```{r retrieval, include=TRUE}
+shhh <- suppressPackageStartupMessages
+shhh(library(psrcctpp))
+shhh(library(magrittr))
+shhh(library(dplyr))
+
+x <- get_psrc_ctpp(2016, "A202105", "tract")
+head(x[,6:9])
+
+```
+
+## Create custom variables and use them to aggregate CTPP data
+
+CTPP data tables include totals as well as category breakdowns, but if you wish to define either a custom category or a custom geography (as an aggregate of a smaller geography, e.g. tract or block group), you can create your own grouping variable, and then summarize using that variable, as follows. Notice the **`incl_na=`** option can be used to limit your results without needing to filter the input data first.
+  
+You can utilize the convenience function **`ctpp_shares()`** to append the share and share MOE to any CTPP dataset (as long as it contains category totals, as is typically true).
+
+```{r summation, include=TRUE}
+shhh(library(stringr))
+x %<>% mutate(
+  custom_geo=case_when(
+               str_sub(work_geoid,4L,11L) %in% paste0("3302380",3:4)         ~ "Downtown Bellevue",
+               str_sub(work_geoid,4L,11L) %in% paste0("61040",c(4,7:8),"00") ~ "Downtown Everett",
+               TRUE                                                          ~ NA_character_),
+  category=case_when(grepl(" carpool$", category)                       ~"Carpool",
+                     grepl("Drove alone", category)                     ~"Drove Alone",
+                     grepl("Streetcar|Bus|Subway|Ferry|Rail", category) ~"Transit",
+                     grepl("Bicycle|Walked", category)                  ~"Bike/Ped",
+                     !is.na(category)                                   ~category))
+rs <- psrc_ctpp_sum(x, group_vars="custom_geo", incl_na=FALSE) %>% ctpp_shares()
+head(rs[,3:8])
+
+```
