@@ -17,8 +17,11 @@ RoxygenNote: 7.2.1
 Imports: 
     data.table,
     dplyr,
+    httr,
+    jsonlite,
     magrittr,
     psrccensus,
+    purr,
     rlang,
     sf,
     stringr,
