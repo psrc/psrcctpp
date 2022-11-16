@@ -1,21 +1,35 @@
-library(httr)
-library(jsonlite)
-library(data.table)
-library(dplyr)
-library(stringr)
-library(purrr)
+#' @importFrom magrittr %<>% %>%
+#' @author Michael Jensen
+NULL
 
+#' Fetch API results
+#'
+#' Helper function sending the API call & parsing its response
+#'
+#' @param url api call
+#' @return data table
+#'
+#' @importFrom httr GET http_type
+#' @importFrom jsonlite fromJSON
 api_gofer <- function(url){
   h <- c("x-api-key"=Sys.getenv("CTPP_API_KEY"), "accept"="application/json")
-  resp <- httr::GET(url, add_headers(.headers=h))
+  resp <- GET(url, add_headers(.headers=h))
   if (http_type(resp)!="application/json") {
     stop("API did not return json", call.=FALSE)
   }
-  result <- jsonlite::fromJSON(content(resp, "text", encoding="UTF-8"),
-                               simplifyDataFrame=TRUE) %>% purrr::pluck("data")
+  result <- fromJSON(content(resp, "text", encoding="UTF-8"),
+               simplifyDataFrame=TRUE) %>% purrr::pluck("data")
   return(result)
 }
 
+#' Search CTPP table codes
+#'
+#' @param regex string pattern to match
+#' @param year last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+#' @return data table
+#'
+#' @import data.table
+#' @export
 ctpp_tblsearch <- function(regex, year=2016) {
   url <- paste0("https://ctpp.macrosysrt.com/api/groups?year=", year)
   result <- api_gofer(url) %>% setDT() %>%
@@ -35,12 +49,12 @@ ctpp_tblsearch <- function(regex, year=2016) {
 #' @importFrom stringr str_sub str_extract str_replace
 #' @import data.table
 #' @export
-get_psrc_ctpp <- function(quarry, year=2016, scale, geo=NULL){
+get_psrc_ctpp_api <- function(quarry, year=2016, scale, geo=NULL){
   get_arg <- paste0("?get=",
                     if(length(quarry)>1){
                       paste0(quarry, collapse=",")
                     }else{
-                      paste0("group%28", tolower(quarry))})
+                      paste0("group%28", tolower(quarry), "%29")})
   scale_arg <- if(!grepl("-", scale)){paste0("&for=", scale)
                       }else{paste0("&for=", strsplit(scale, ",")[[1]],
                                  "&d-for=", strsplit(scale, ",")[[2]])}
