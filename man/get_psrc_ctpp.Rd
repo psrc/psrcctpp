@@ -4,12 +4,12 @@
 \alias{get_psrc_ctpp}
 \title{Retrieve CTPP data}
 \usage{
-get_psrc_ctpp(dyear = 2016, data_table, scale, geoids = NULL)
+get_psrc_ctpp(dyear = 2016, table_code, scale, geoids = NULL)
 }
 \arguments{
 \item{dyear}{last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey}
 
-\item{data_table}{requested data table as string, e.g. "A302103"}
+\item{table_code}{requested data table as string, e.g. "A302103"}
 
 \item{scale}{"county", "place", or "tract" for residence/workplace tables; "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables}
 

@@ -25,7 +25,7 @@ The primary drawback to CTPP data is the approximately 3-year lag to develop it;
 The psrcctpp package retrieves data one table at a time, with the **`get_psrc_ctpp()`** function. Its parameters are:
 
   * **dyear** - aka data year, the last year of the CTPP span (i.e. 2016 for 2012-16)
-  * **table** - identifier (string) for the table you want
+  * **table_code** - identifier (string) for the table you want
   * **scale** - for residence or workplace tables, either "county", "place", or "tract"
             for flow tables, either "county-county", "place-place", "place-county", "county-place", or "tract-tract"
             "block group" scale will be available starting with the 2017-21 survey.

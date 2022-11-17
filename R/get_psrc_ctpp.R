@@ -26,7 +26,7 @@ return(scale_refs)
 #' Retrieve CTPP data
 #'
 #' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
-#' @param data_table requested data table as string, e.g. "A302103"
+#' @param table_code requested data table as string, e.g. "A302103"
 #' @param scale "county", "place", or "tract" for residence/workplace tables; "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
 #' @param geoids optional string vector of GEOID codes to limit the table
 #' @return data table
@@ -34,15 +34,15 @@ return(scale_refs)
 #' @importFrom stringr str_sub str_extract str_replace
 #' @import data.table
 #' @export
-get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
+get_psrc_ctpp <- function(dyear=2016, table_code, scale, geoids=NULL){
   # Declare variables (to avoid package warnings)
   scale_refs <- scale_ref <- scale_filter <- scale_label <- dir <- val_lookup <- dt <- NULL
   rgeo <- wgeo <- geo_lookup <- res_geoid <- work_geoid <- res_label <- work_label <- NULL
-  psrc_places <- targetfile <- pat <- NAME <- GEOID <- category <- NULL
+  psrc_places <- targetfile <- pat <- NAME <- GEOID <- LDESC <- table_type <- category <- NULL
 
   # Create geography prefix lookup per scale
   scale_ref <- scale_code_lookup() %>%
-    .[scale_label==scale & str_sub(data_table,2L,2L)==table_type]
+    .[scale_label==scale & str_sub(table_code,2L,2L)==table_type]
   scale_filter <- paste0("^C", scale_refs$scale_id, "\\w+",collapse="|")
 
   # Value & geography lookup table ETL
@@ -59,7 +59,7 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
     fread(colClasses=rep("character",2),showProgress=FALSE) %>% setkeyv(c("GEOID"))
 
   # Load primary datatable; filter by scale, [geoid]; attach value and geography labels
-  targetfile <- paste0("WA_", as.character(dyear-4), "thru", dyear, "_") %>% paste0(dir, ., data_table, ".csv")
+  targetfile <- paste0("WA_", as.character(dyear-4), "thru", dyear, "_") %>% paste0(dir, ., table_code, ".csv")
   dt <- fread(targetfile, showProgress=FALSE) %>%
     .[, c("EST", "MOE"):=lapply(.SD, str2num), .SDcols=c("EST", "MOE")] %>%
     .[grepl(paste0("^C",scale_ref$scale_id), GEOID)] %>% setkeyv(c("TBLID","LINENO")) %>%
@@ -98,12 +98,13 @@ get_psrc_ctpp <- function(dyear=2016, data_table, scale, geoids=NULL){
 #' @inheritParams ctpp_stat
 #' @param stat_type for now, "sum" is only option
 #'
-#' @importFrom dplyr ungroup group_by filter across summarize if_all
+#' @importFrom dplyr ungroup group_by filter across summarize if_all rename
 #' @importFrom rlang is_empty
 #' @importFrom tidyselect all_of
 #' @importFrom tidycensus moe_sum
 #' @import data.table
 psrc_ctpp_stat <- function(df, group_vars, stat_type="sum", incl_na=FALSE){
+  table_id <- line_id <- category <- estimate <- estimate_moe <- NULL
   sum_estimate <- sum_moe <- NULL
   if(all(group_vars!="keep_existing")){df %<>% ungroup()}                                          # "keep_existing" is power-user option to maintain more complex groupings;
   if(all(!is.null(group_vars) & group_vars!="keep_existing")){                                     # -- otherwise the package ungroups before and afterward
@@ -121,7 +122,7 @@ psrc_ctpp_stat <- function(df, group_vars, stat_type="sum", incl_na=FALSE){
 
 #' CTPP summary statistics
 #'
-#' @param ctpp_data result of get_psrc_ctpp function
+#' @param df result of get_psrc_ctpp function
 #' @param group_vars grouping variables, original or added
 #' @param incl_na whether to include NA lines
 #' @name ctpp_stat
@@ -141,13 +142,14 @@ psrc_ctpp_sum <- function(df, group_vars=NULL, incl_na=TRUE){
 #' @param df dataframe, either result of get_psrc_ctpp or psrc_ctpp_stat
 #' @return dataframe with share & share_moe
 #'
-#' @importFrom dplyr filter select select_if rename inner_join mutate
+#' @importFrom dplyr filter select select_if rename_with inner_join mutate
 #' @importFrom rlang is_empty
 #' @importFrom stringr str_replace
 #' @importFrom tidycensus moe_prop
 #' @import data.table
 #' @export
 ctpp_shares <- function(df){
+  category <- estimate <- estimate_moe <- total <- total_moe <- totals <- NULL
   if(is_empty(df$category=="Total")){return(df)}else{
     totals <- filter(df, category=="Total") %>% select_if(!grepl("^table_id$|^line_id$|^category$", colnames(.))) %>%
       rename_with(~str_replace(., "estimate", "total"), grep("^estimate$|^estimate_moe$", colnames(.), value=TRUE))

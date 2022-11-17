@@ -7,6 +7,8 @@
 psrc_ctpp_stat(df, group_vars, stat_type = "sum", incl_na = FALSE)
 }
 \arguments{
+\item{df}{result of get_psrc_ctpp function}
+
 \item{group_vars}{grouping variables, original or added}
 
 \item{stat_type}{for now, "sum" is only option}
