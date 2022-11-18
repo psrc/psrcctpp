@@ -3,7 +3,6 @@
 NULL
 
 globalVariables(c(":=", "!!", ".", "enquos"))
-psrc_counties <- c("033","035","053","061")
 
 str2num <- function(x){as.numeric(stringr::str_replace_all(x,"(\\+/-)|,",""))}
 `%not_in%` <- Negate(`%in%`)
@@ -58,7 +57,8 @@ ctpp_tblsearch <- function(regex, year=2016) {
 #' @import data.table
 #' @export
 get_psrc_ctpp_api <- function(table_code, dyear=2016, scale, geoids=NULL){
-  name <- label <- NULL
+  name <- label <- valtype <- variable <- value <- geoid <- NULL
+  psrc_counties <- c("033","035","053","061")
   # Build API call URL
   tbl <- mapply(str_sub, table_code, 1L,7L) %>% unique()
   if(length(tbl)>1){return("Requested variables must come from the same table.")}
@@ -71,10 +71,8 @@ get_psrc_ctpp_api <- function(table_code, dyear=2016, scale, geoids=NULL){
                       }else{paste0("&for=", strsplit(scale, ",")[[1]],
                                  "&d-for=", strsplit(scale, ",")[[2]])}
   if(is.null(geoids)){
-    if(scale=="tract"){
-      geo_arg <- paste0("&in=county%3A",
-                        paste0("53", psrc_counties, collapse="%2C"),
-                        "&in=state%3A53")
+    if(scale %in% c("county","tract")){
+      geo_arg <- paste0("&in=county%3A", paste0(psrc_counties, collapse="%2C"),"&in=state%3A53")
     }else{
       geo_arg <-        "&in=state%3A53"
     }
