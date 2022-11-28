@@ -4,9 +4,10 @@
 \alias{psrc_ctpp_stat}
 \title{Generic call for CTPP summary statistics}
 \usage{
-psrc_ctpp_stat(df, group_vars, stat_type = "sum", incl_na = FALSE)
+psrc_ctpp_stat(ctpp_data, group_vars, stat_type = "sum", incl_na = FALSE)
 }
 \arguments{
+
 \item{df}{result of get_psrc_ctpp function}
 
 \item{group_vars}{grouping variables, original or added}
