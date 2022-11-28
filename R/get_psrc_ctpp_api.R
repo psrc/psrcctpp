@@ -4,7 +4,7 @@ NULL
 
 globalVariables(c(":=", "!!", ".", "enquos"))
 
-str2num <- function(x){as.numeric(stringr::str_replace_all(x,"(\\+/-)|,",""))}
+str2num <- function(x){as.numeric(stringr::str_replace_all(x,"(\\+/-)|,|\\*+",""))}
 `%not_in%` <- Negate(`%in%`)
 
 #' Fetch API results
@@ -52,7 +52,7 @@ ctpp_tblsearch <- function(regex, year=2016) {
 #' @param geoids optional string vector of GEOID codes to limit the table
 #' @return data table
 #'
-#' @importFrom stringr str_sub str_extract str_replace
+#' @importFrom stringr str_sub str_extract str_replace str_split
 #' @importFrom dplyr case_when
 #' @import data.table
 #' @export
@@ -68,8 +68,8 @@ get_psrc_ctpp_api <- function(table_code, dyear=2016, scale, geoids=NULL){
                     }else{
                       paste0("group%28", tolower(table_code), "%29")})
   scale_arg <- if(!grepl("-", scale)){paste0("&for=", scale)
-                      }else{paste0("&for=", strsplit(scale, ",")[[1]],
-                                 "&d-for=", strsplit(scale, ",")[[2]])}
+                      }else{paste0("&for=", str_split(scale, ",")[[1]],
+                                 "&d-for=", str_split(scale, ",")[[2]])}
   if(is.null(geoids)){
     if(scale %in% c("county","tract")){
       geo_arg <- paste0("&in=county%3A", paste0(psrc_counties, collapse="%2C"),"&in=state%3A53")
