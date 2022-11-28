@@ -1,6 +1,6 @@
 #' @importFrom magrittr %<>% %>%
 #' @author Michael Jensen
-
+NULL
 
 globalVariables(c(":=", "!!", ".", "enquos"))
 psrc_counties <- c("033","035","053","061")
@@ -39,7 +39,6 @@ get_psrc_ctpp <- function(dyear=2016, table_code, scale, geoids=NULL){
   scale_refs <- scale_ref <- scale_filter <- scale_label <- dir <- val_lookup <- dt <- NULL
   rgeo <- wgeo <- geo_lookup <- res_geoid <- work_geoid <- res_label <- work_label <- NULL
   psrc_places <- targetfile <- pat <- NAME <- GEOID <- LDESC <- table_type <- category <- NULL
-
 
   # Create geography prefix lookup per scale
   scale_ref <- scale_code_lookup() %>%
@@ -104,14 +103,9 @@ get_psrc_ctpp <- function(dyear=2016, table_code, scale, geoids=NULL){
 #' @importFrom tidyselect all_of
 #' @importFrom tidycensus moe_sum
 #' @import data.table
-
 psrc_ctpp_stat <- function(df, group_vars, stat_type="sum", incl_na=FALSE){
   table_id <- line_id <- category <- estimate <- estimate_moe <- NULL
   sum_estimate <- sum_moe <- NULL
-
-psrc_ctpp_stat <- function(ctpp_data, group_vars, stat_type="sum", incl_na=FALSE){
-  df <- table_id <- line_id <- category <- estimate <- estimate_moe <- NULL                              # Declare variables (to avoid package warnings)
-  df <- ctpp_data
   if(all(group_vars!="keep_existing")){df %<>% ungroup()}                                          # "keep_existing" is power-user option to maintain more complex groupings;
   if(all(!is.null(group_vars) & group_vars!="keep_existing")){                                     # -- otherwise the package ungroups before and afterward
     if(incl_na==FALSE){df %<>% filter(if_all(all_of(group_vars), ~ !is.na(.)))}                    # Allows users to exclude w/o removing observations from the data object itself
@@ -138,8 +132,8 @@ NULL
 #' @rdname ctpp_stat
 #' @title Generate CTPP sums
 #' @export
-psrc_ctpp_sum <- function(ctpp_data, group_vars=NULL, incl_na=TRUE){
-  rs <- psrc_ctpp_stat(ctpp_data=ctpp_data, stat_type="sum", group_vars=group_vars, incl_na=incl_na)
+psrc_ctpp_sum <- function(df, group_vars=NULL, incl_na=TRUE){
+  rs <- psrc_ctpp_stat(df=df, stat_type="sum", group_vars=group_vars, incl_na=incl_na)
   return(rs)
 }
 
@@ -155,7 +149,6 @@ psrc_ctpp_sum <- function(ctpp_data, group_vars=NULL, incl_na=TRUE){
 #' @import data.table
 #' @export
 ctpp_shares <- function(df){
-
   category <- estimate <- estimate_moe <- total <- total_moe <- totals <- NULL
   if(is_empty(df$category=="Total")){return(df)}else{
     totals <- filter(df, category=="Total") %>% select_if(!grepl("^table_id$|^line_id$|^category$", colnames(.))) %>%
