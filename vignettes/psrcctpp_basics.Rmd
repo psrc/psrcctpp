@@ -24,12 +24,13 @@ The primary drawback to CTPP data is the approximately 3-year lag to develop it;
 
 The psrcctpp package retrieves data one table at a time, with the **`get_psrc_ctpp()`** function. Its parameters are:
 
-  * **dyear** - aka data year, the last year of the CTPP span (i.e. 2016 for 2012-16)
-  * **table_code** - identifier (string) for the table you want
   * **scale** - for residence or workplace tables, either "county", "place", or "tract"
             for flow tables, either "county-county", "place-place", "place-county", "county-place", or "tract-tract"
             "block group" scale will be available starting with the 2017-21 survey.
+  * **table_code** - identifier (string) for the table you want
+  * **dyear** - aka data year, the last year of the CTPP span (i.e. 2016 for 2012-16)
   * (optional) list of **geoids** to restrict the table further
+  * (optional) network **filepath** if the API is inoperable (use `"default"` unless you've saved another set; this requires PSRC VPN).
 
 The result is a standard dataframe. Notice that all results will include both res_geoid, res_label and work_geoid, work_label fields, but the work fields will be blank for residential tables and the residence fields will be blank for workplace tables. Strings are by default stored as characters rather than Factor datatype.
 
@@ -39,8 +40,8 @@ shhh(library(psrcctpp))
 shhh(library(magrittr))
 shhh(library(dplyr))
 
-x <- get_psrc_ctpp(2016, "A202105", "tract")
-head(x[,6:9])
+x <- get_psrc_ctpp("tract", "A202105", 2016)
+head(x[,c(1,5:8)])
 
 ```
 
@@ -63,6 +64,6 @@ x %<>% mutate(
                      grepl("Bicycle|Walked", category)                  ~"Bike/Ped",
                      !is.na(category)                                   ~category))
 rs <- psrc_ctpp_sum(x, group_vars="custom_geo", incl_na=FALSE) %>% ctpp_shares()
-head(rs[,3:8])
+head(rs[,2:7])
 
 ```

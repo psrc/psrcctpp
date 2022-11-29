@@ -4,7 +4,13 @@
 \alias{scale_code_lookup}
 \title{Correspondence table for CTPP codes, table type, and scale}
 \usage{
-scale_code_lookup()
+scale_code_lookup(scale, table_code)
+}
+\arguments{
+\item{scale}{"county", "place", or "tract" for residence/workplace tables;
+"county-county", "place-place", "place-county", "county-place", or "tract-tract" for flow tables}
+
+\item{table_code}{requested data table as string, e.g. "A302103"}
 }
 \value{
 correspondence table

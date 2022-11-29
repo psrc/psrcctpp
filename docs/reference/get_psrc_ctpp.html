@@ -48,25 +48,30 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_psrc_ctpp</span><span class="op">(</span>dyear <span class="op">=</span> <span class="fl">2016</span>, <span class="va">data_table</span>, <span class="va">scale</span>, geoids <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_psrc_ctpp</span><span class="op">(</span><span class="va">scale</span>, <span class="va">table_code</span>, dyear <span class="op">=</span> <span class="fl">2016</span>, geoids <span class="op">=</span> <span class="cn">NULL</span>, filepath <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
-    <dl><dt>dyear</dt>
-<dd><p>last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey</p></dd>
+    <dl><dt>scale</dt>
+<dd><p>"county", "place", or "tract" for residence/workplace tables;
+"county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables</p></dd>
 
 
-<dt>data_table</dt>
+<dt>table_code</dt>
 <dd><p>requested data table as string, e.g. "A302103"</p></dd>
 
 
-<dt>scale</dt>
-<dd><p>"county", "place", or "tract" for residence/workplace tables; "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables</p></dd>
+<dt>dyear</dt>
+<dd><p>last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey</p></dd>
 
 
 <dt>geoids</dt>
 <dd><p>optional string vector of GEOID codes to limit the table</p></dd>
+
+
+<dt>filepath</dt>
+<dd><p>optional network location of downloaded ftp CTPP files</p></dd>
 
 </dl></div>
     <div class="section level2">
