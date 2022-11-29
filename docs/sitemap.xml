@@ -31,10 +31,13 @@
     <loc>https://psrc.github.io/psrcctpp/reference/ctpp_tblsearch.html</loc>
   </url>
   <url>
-    <loc>https://psrc.github.io/psrcctpp/reference/get_psrc_ctpp.html</loc>
+    <loc>https://psrc.github.io/psrcctpp/reference/fetch_ctpp_from_api.html</loc>
   </url>
   <url>
-    <loc>https://psrc.github.io/psrcctpp/reference/get_psrc_ctpp_api.html</loc>
+    <loc>https://psrc.github.io/psrcctpp/reference/fetch_ctpp_from_file.html</loc>
+  </url>
+  <url>
+    <loc>https://psrc.github.io/psrcctpp/reference/get_psrc_ctpp.html</loc>
   </url>
   <url>
     <loc>https://psrc.github.io/psrcctpp/reference/index.html</loc>

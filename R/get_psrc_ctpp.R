@@ -8,87 +8,241 @@ psrc_counties <- c("033","035","053","061")
 str2num <- function(x){as.numeric(stringr::str_replace_all(x,"(\\+/-)|,",""))}
 `%not_in%` <- Negate(`%in%`)
 
+#' Fetch API results
+#' Helper function sending the API call & parsing its response
+#'
+#' @param url api call
+#' @return data table
+#'
+#' @importFrom httr GET http_type add_headers content
+#' @importFrom jsonlite fromJSON
+api_gofer <- function(url){
+  h <- c("x-api-key"=Sys.getenv("CTPP_API_KEY"), "accept"="application/json")
+  resp <- GET(url, add_headers(.headers=h))
+  if (http_type(resp)!="application/json") {
+    stop("API did not return json", call.=FALSE)
+  }
+  result <- fromJSON(content(resp, "text", encoding="UTF-8"),
+                     simplifyDataFrame=TRUE) %>% purrr::pluck("data")
+  return(result)
+}
+
+#' Search CTPP table codes
+#'
+#' @param regex string pattern to match
+#' @param year last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+#' @return data table
+#'
+#' @import data.table
+#' @export
+ctpp_tblsearch <- function(regex, year=2016) {
+  description <- universe <- NULL # Declare for documentation purposes
+  url <- paste0("https://ctpp.macrosysrt.com/api/groups?year=", year)
+  result <- api_gofer(url) %>% setDT() %>%
+    .[grepl(regex, description, ignore.case=TRUE)|
+        grepl(regex, universe, ignore.case=TRUE)]
+  return(result)
+}
+
 #' Correspondence table for CTPP codes, table type, and scale
 #'
+#' @param scale "county", "place", or "tract" for residence/workplace tables;
+#' "county-county", "place-place", "place-county", "county-place", or "tract-tract" for flow tables
+#' @param table_code requested data table as string, e.g. "A302103"
 #' @return correspondence table
 #'
-scale_code_lookup <- function(){
+scale_code_lookup <- function(scale, table_code){
+scale_label <- table_type <- NULL # Declare for documentation purposes
 scale_refs <- data.frame(
-  scale_id   =sprintf("%02i",c(2:3,5,11,22:23,25,31,42:43,45,50:51,54)),
+  scale_id   =c(2:3,5,11,22:23,25,31,42:43,45,50:51,54),
   table_type =c(rep(1,4),rep(2,4),rep(3,6)),
   scale_label=c(rep(c("state","county","place","tract"),2),
                 "state-state","county-county","place-place","place-county","county-place","tract-tract"),
   res_len    =c(2,5,7,11, rep(NA_integer_,4), 2,5,7,7,5,11),
-  work_len   =c(rep(NA_integer_,4), 2,5,7,11, 2,5,7,5,7,11)) %>% setDT()
+  work_len   =c(rep(NA_integer_,4), 2,5,7,11, 2,5,7,5,7,11)) %>% setDT() %>%
+  .[scale_label==scale & as.integer(str_sub(table_code,2L,2L))==table_type]
 return(scale_refs)
 }
 
-#' Retrieve CTPP data
+#' Fetch ftp-format CTPP data from network location
+#' Helper to get_psrc_ctpp
 #'
-#' @param scale "county", "place", or "tract" for residence/workplace tables; "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
+#' @param scale "county", "place", or "tract" for residence/workplace tables;
+#' "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
+#' @param table_code requested data table as string, e.g. "A302103"
+#' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+#' @param filepath optional network location of downloaded ftp CTPP files
+#' @return data table
+#' @importFrom stringr str_sub str_extract str_replace
+#' @importFrom dplyr if_else
+#' @import data.table
+fetch_ctpp_from_file <- function(scale, table_code, dyear, filepath="default"){
+  scale_filter <- scale_label <- dir <- targetfile <- geoid <- ldesc <- name <- NULL  # Declare for documentation purposes
+  #rgeo <- wgeo <- geo_lookup <- GEOID <- LDESC <- NULL
+  res_geoid <- work_geoid <- res_label <- work_label <- table_type <- category <- NULL
+  # Create geography prefix lookup per scale
+  scale_ref <- scale_code_lookup(scale, table_code)
+  # Value & geography lookup table ETL
+  dir <- if_else(dyear==2010,"2006_2010/","2012_2016/") %>%
+    paste0(if_else(filepath!="default", filepath, "X:/DSA/Census/CTPP/"), .)
+  val_lookup <- paste0(dir,"acs_ctpp_2012thru2016_table_shell.txt") %>% fread(showProgress=FALSE) %>%
+       setnames("tblid", "tbl_id") %>% setkeyv(c("tblid","lineno"))
+
+  # Steps for ftp files already saved to network file
+  # scale_filter <- paste0("^C", sprintf("%02i",scale_ref$scale_id), "\\w+",collapse="|")
+  # rgeo <- paste0(dir,"acs_ctpp_2012thru2016_res_geo.txt") %>% fread() %>% .[,5:6] %>%
+  #   .[grepl(scale_filter, GEOID)] %>% .[, GEOID:=str_replace(GEOID, "^C\\w+US", "")]
+  # wgeo <- paste0(dir,"acs_ctpp_2012thru2016_pow_geo.txt") %>% fread() %>% .[,5:6] %>%
+  #   .[grepl(scale_filter, GEOID)] %>% .[, GEOID:=str_replace(geoid, "^C\\w+US", "")]
+  # geo_lookup <- rbind(rgeo, wgeo) %>% unique() %>% setnames(tolower(colnames(.))) %>% setkeyv(c("geoid"))
+  # rm(rgeo, wgeo)
+  geo_lookup <- paste0(dir,"acs_ctpp_2012thru2016_all_geo.txt") %>%
+    fread(colClasses=rep("character",2),showProgress=FALSE) %>%
+    setnames(tolower(colnames(.))) %>% setkeyv(c("geoid"))
+
+  # Load primary datatable; filter by scale, geoid; attach value and geography labels
+  targetfile <- paste0("WA_", as.character(dyear-4), "thru", dyear, "_") %>% paste0(dir, ., table_code, ".csv")
+  dt <- fread(targetfile, showProgress=FALSE) %>%
+    .[, c("est", "moe"):=lapply(.SD, str2num), .SDcols=c("est", "moe")] %>%
+    .[grepl(paste0("^C", sprintf("%02i", scale_ref$scale_id)), geoid)] %>% setkeyv(c("tbl_id","lineno")) %>%
+    .[val_lookup, category:=ldesc, on=key(.)]
+  dt[, (c("res_geoid","res_label","work_geoid","work_label")):=""]
+  if(scale_ref$table_type %in% c(1,3)){
+    dt %<>% .[, res_geoid:=str_sub(str_extract(geoid,"US\\d+"),3L,(2+scale_ref$res_len))]
+    dt[geo_lookup, res_label:=name, on=.(res_geoid=geoid)]
+  }
+  if(scale_ref$table_type %in% c(2,3)){
+    dt %<>% .[, work_geoid:=str_sub(str_extract(geoid,"US\\d+"),-(scale_ref$work_len))]
+    dt[geo_lookup, work_label:=name, on=.(work_geoid=geoid)]
+  }
+  dt %<>% .[, c("geoid","source","lineno"):=NULL] %>%
+    setnames(c("EST", "MOE"), c("estimate", "estimate_moe"))
+  return(dt)
+}
+
+#' Fetch CTPP data from AASHTO api
+#' Helper to get_psrc_ctpp
+#'
+#' @param scale "county", "place", or "tract" for residence/workplace tables;
+#' "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
 #' @param table_code requested data table as string, e.g. "A302103"
 #' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
 #' @param geoids optional string vector of GEOID codes to limit the table
 #' @return data table
+#' @importFrom stringr str_sub str_extract str_replace str_split
+#' @importFrom dplyr case_when
+#' @import data.table
+fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids){
+  name <- label <- valtype <- variable <- value <- geoid <- NULL
+  scale_ref <- scale_code_lookup(scale, table_code)
+  psrc_counties <- c("033","035","053","061")
+
+  # Build API call URL
+  tbl <- mapply(str_sub, table_code, 1L,7L) %>% unique()
+  if(length(tbl)>1){return("Requested variables must come from the same table.")}
+  get_arg <- paste0("?get=",
+                    if(length(table_code)>1){
+                      paste0(table_code, collapse=",")
+                    }else{
+                      paste0("group%28", tolower(table_code), "%29")})
+  scale_arg <- if(!grepl("-", scale)){paste0("&for=", scale)
+  }else{paste0("&for=", str_split(scale, "-")[[1]][1],
+               "&d-for=", str_split(scale, "-")[[1]][2])}
+  if(is.null(geoids)){
+    if(grepl("^\\w+\\b",scale) %in% c("county","tract")){
+      geo_arg <- paste0("&in=county%3A", paste0(psrc_counties, collapse="%2C"),"&in=state%3A53")
+    }else{
+      geo_arg <- "&in=state%3A53"
+    }
+    if(grepl("-\\w+$",scale) %in% c("-county","-tract")){
+      geo_arg %<>% paste0("&d-in=county%3A", paste0(psrc_counties, collapse="%2C"),"&d-in=state%3A53")
+    }else if(grepl("-\\w+$", scale)=="-place"){
+      geo_arg %<>% "&d-in=state%3A53"
+    }
+  }else{
+    geo_len <- lapply(geoids, length) %>% unique()
+    geo_scale <- case_when(geo_len==5  ~"county",
+                           geo_len==7  ~"place",
+                           geo_len==11 ~"tract")
+    geo_arg <- if(length(geo_len!=1)){NULL}else{
+      paste0("&in=", geo_scale, "%3A", paste0(geoids, collapse="%2C"))
+    }
+  }
+
+  # Retrieve labels
+  labels_url <- paste0("https://ctpp.macrosysrt.com/api/groups/",
+                       tbl, "/variables?year=",dyear)
+  labels <- api_gofer(labels_url) %>% setDT() %>%
+    .[grepl((tbl), name, ignore.case=TRUE),.(name, label)] %>% unique
+
+  # Get data
+  data_url <- paste0("https://ctpp.macrosysrt.com/api/data/",
+                     dyear, get_arg, scale_arg, geo_arg,"&format=list")
+  dt <- api_gofer(data_url) %>% setDT()
+  melt_vars <- grep("^geoid$|name$", colnames(dt), value=TRUE)
+  dt %<>% melt(id.vars=melt_vars, variable.factor=FALSE) %>%
+    .[, `:=`(valtype=str_sub(str_extract(variable,"_(e|m)\\d+$"),2L,2L),
+             value=str2num(value), table_id=str_sub(variable, 1L, 7L),
+             geoid=str_replace(geoid,"[ABC]\\d+US",""))] %>%
+    .[labels, variable:=label, on=.(variable=name)] %>%
+    dcast(... ~ valtype, value.var="value")  %>%
+    setnames(c("variable", "e", "m"), c("category", "estimate", "estimate_moe"))
+  if(scale_ref$table_type==1){
+    dt %<>% .[,c("work_geoid", "work_label"):=NA_character_] %>%
+      setnames(c("geoid","name"),c("res_geoid", "res_label"))
+  }else if(scale_ref$table_type==2){
+    dt %<>% .[,c("res_geoid", "res_label"):=NA_character_] %>%
+      setnames(c("geoid","name"),c("work_geoid", "work_label"))
+  }else if(scale_ref$table_type==3){
+    dt %<>% .[, `:=`(res_geoid=str_sub(geoid,3L,(2+scale_ref$res_len)),
+                              work_geoid=str_sub(geoid,-(scale_ref$work_len)))] %>%
+      .[, geoid:=NULL] %>%
+      setnames(c("origin_name","destination_name"),
+               c("res_label", "work_label"))
+  }
+  return(dt)
+}
+
+#' Retrieve CTPP data
 #'
-#' @importFrom stringr str_sub str_extract str_replace
+#' @param scale "county", "place", or "tract" for residence/workplace tables;
+#' "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
+#' @param table_code requested data table as string, e.g. "A302103"
+#' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+#' @param geoids optional string vector of GEOID codes to limit the table
+#' @param filepath optional network location of downloaded ftp CTPP files
+#' @return data table
+#'
 #' @import data.table
 #' @export
-get_psrc_ctpp <- function(scale, table_code, dyear=2016, geoids=NULL){
+get_psrc_ctpp <- function(scale, table_code, dyear=2016, geoids=NULL, filepath=NULL){
   # Declare variables (to avoid package warnings)
-  scale_refs <- scale_ref <- scale_filter <- scale_label <- dir <- val_lookup <- dt <- NULL
-  rgeo <- wgeo <- geo_lookup <- res_geoid <- work_geoid <- res_label <- work_label <- NULL
-  psrc_places <- targetfile <- pat <- NAME <- GEOID <- LDESC <- table_type <- category <- NULL
+  res_geoid <- work_geoid <- GEOID <- NULL
+  psrc_counties <- c("033","035","053","061")
+  scale_ref <- scale_code_lookup(scale, table_code)
 
-  # Create geography prefix lookup per scale
-  scale_ref <- scale_code_lookup() %>%
-    .[scale_label==scale & str_sub(table_code,2L,2L)==table_type]
-  scale_filter <- paste0("^C", scale_refs$scale_id, "\\w+",collapse="|")
+  # Get data - API is default source; use filepath if API is not working
+  if(!is.null(filepath)){
+    dt <- fetch_ctpp_from_file(scale, table_code, dyear, filepath)
+  }else{
+    dt <- fetch_ctpp_from_api(scale, table_code, dyear, geoids)
+  }
 
-  # Value & geography lookup table ETL
-  dir <- dplyr::if_else(dyear==2010,"2006_2010/","2012_2016/") %>% paste0("X:/DSA/Census/CTPP/", .)
-  val_lookup <- paste0(dir,"acs_ctpp_2012thru2016_table_shell.txt") %>%
-    fread(showProgress=FALSE) %>% setkeyv(c("TBLID","LINENO"))
-  # rgeo <- paste0(dir,"acs_ctpp_2012thru2016_res_geo.txt") %>% fread() %>% .[,5:6] %>%
-  #   .[grepl(scale_filter, GEOID)] %>% .[, GEOID:=str_replace(GEOID, "^C\\w+US", "")]
-  # wgeo <- paste0(dir,"acs_ctpp_2012thru2016_pow_geo.txt") %>% fread() %>% .[,5:6] %>%
-  #   .[grepl(scale_filter, GEOID)] %>% .[, GEOID:=str_replace(GEOID, "^C\\w+US", "")]
-  # geo_lookup <- rbind(rgeo, wgeo) %>% unique() %>% setkeyv(c("GEOID"))
-  # rm(rgeo, wgeo)
-  geo_lookup <- paste0(dir,"acs_ctpp_2012thru2016_all_geo.txt") %>%
-    fread(colClasses=rep("character",2),showProgress=FALSE) %>% setkeyv(c("GEOID"))
-
-  # Load primary datatable; filter by scale, [geoid]; attach value and geography labels
-  targetfile <- paste0("WA_", as.character(dyear-4), "thru", dyear, "_") %>% paste0(dir, ., table_code, ".csv")
-  dt <- fread(targetfile, showProgress=FALSE) %>%
-    .[, c("EST", "MOE"):=lapply(.SD, str2num), .SDcols=c("EST", "MOE")] %>%
-    .[grepl(paste0("^C",scale_ref$scale_id), GEOID)] %>% setkeyv(c("TBLID","LINENO")) %>%
-    .[val_lookup, category:=LDESC, on=key(.)]
-  dt[, (c("res_geoid","res_label","work_geoid","work_label")):=""]
-  if(scale_ref$table_type %in% c(1,3)){
-    dt %<>% .[, res_geoid:=str_sub(str_extract(GEOID,"US\\d+"),3L,(2+scale_ref$res_len))]
-    dt[geo_lookup, res_label:=NAME, on=.(res_geoid=GEOID)]
-    }
-  if(scale_ref$table_type %in% c(2,3)){
-    dt %<>% .[, work_geoid:=str_sub(str_extract(GEOID,"US\\d+"),-(scale_ref$work_len))]
-    dt[geo_lookup, work_label:=NAME, on=.(work_geoid=GEOID)]
-    }
+  # Filtering
   if(!rlang::is_empty(geoids)){
     dt %<>% .[(res_geoid %in% geoids)|(work_geoid %in% geoids)]
   }else{
     if(scale_ref$scale_id %in% c(5,25,45,50,51)){
-      psrc_places <-  psrccensus::get_psrc_places(dyear) %>% sf::st_drop_geometry() %>% unique()
+      psrc_places <- psrccensus::get_psrc_places(dyear) %>% sf::st_drop_geometry() %>% unique()
       dt %<>% .[(res_geoid %in% psrc_places$GEOID)|(work_geoid %in% psrc_places$GEOID)]
     }else{
       pat <- paste0("^53", psrc_counties, collapse="|")
       dt %<>% .[(grepl(pat, res_geoid))|(grepl(pat, work_geoid))]
     }
   }
-  dt %<>% .[, c("GEOID","SOURCE"):=NULL] %>%
-    setnames(c("TBLID","LINENO", "EST", "MOE"),
-             c(c("table_id","line_id", "estimate", "estimate_moe"))) %>%
-    setcolorder(c("table_id","line_id","res_geoid", "res_label", "work_geoid", "work_label",
-                  "category", "estimate", "estimate_moe"))
+  # Column ordering
+  dt %<>% setcolorder(sort(setdiff(colnames(.), c("category", "estimate", "estimate_moe")))) %>%
+    setcolorder("table_id")
   return(dt)
 }
 
@@ -99,7 +253,6 @@ get_psrc_ctpp <- function(scale, table_code, dyear=2016, geoids=NULL){
 #' @param stat_type for now, "sum" is only option
 #'
 #' @importFrom dplyr ungroup group_by filter across summarize if_all rename
-#' @importFrom rlang is_empty
 #' @importFrom tidyselect all_of
 #' @importFrom tidycensus moe_sum
 #' @import data.table
