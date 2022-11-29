@@ -46,9 +46,9 @@ ctpp_tblsearch <- function(regex, year=2016) {
 
 #' Retrieve CTPP data
 #'
+#' @param scale "county", "place", or "tract" for residence/workplace tables; "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
 #' @param table_code either a table code as string--e.g. "A302103"--or string vector of variable codes
 #' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
-#' @param scale "county", "place", or "tract" for residence/workplace tables; "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
 #' @param geoids optional string vector of GEOID codes to limit the table
 #' @return data table
 #'
@@ -56,7 +56,9 @@ ctpp_tblsearch <- function(regex, year=2016) {
 #' @importFrom dplyr case_when
 #' @import data.table
 #' @export
-get_psrc_ctpp_api <- function(table_code, dyear=2016, scale, geoids=NULL){
+get_psrc_ctpp_api <- function(scale, table_code, dyear=2016, geoids=NULL){
+  scale_ref <- psrcctpp:::scale_code_lookup() %>%
+    .[scale_label==scale & str_sub(table_code,2L,2L)==table_type]
   name <- label <- valtype <- variable <- value <- geoid <- NULL
   psrc_counties <- c("033","035","053","061")
   # Build API call URL
@@ -68,13 +70,18 @@ get_psrc_ctpp_api <- function(table_code, dyear=2016, scale, geoids=NULL){
                     }else{
                       paste0("group%28", tolower(table_code), "%29")})
   scale_arg <- if(!grepl("-", scale)){paste0("&for=", scale)
-                      }else{paste0("&for=", str_split(scale, ",")[[1]],
-                                 "&d-for=", str_split(scale, ",")[[2]])}
+                      }else{paste0("&for=", str_split(scale, "-")[[1]][1],
+                                 "&d-for=", str_split(scale, "-")[[1]][2])}
   if(is.null(geoids)){
-    if(scale %in% c("county","tract")){
+    if(grepl("^\\w+\\b",scale) %in% c("county","tract")){
       geo_arg <- paste0("&in=county%3A", paste0(psrc_counties, collapse="%2C"),"&in=state%3A53")
-    }else{
-      geo_arg <-        "&in=state%3A53"
+      }else{
+      geo_arg <- "&in=state%3A53"
+     }
+    if(grepl("-\\w+$",scale) %in% c("-county","-tract")){
+      geo_arg %<>% paste0("&d-in=county%3A", paste0(psrc_counties, collapse="%2C"),"&d-in=state%3A53")
+    }else if(grepl("-\\w+$", scale)=="-place"){
+      geo_arg %<>% "&d-in=state%3A53"
     }
   }else{
     geo_len <- lapply(geoids, length) %>% unique()
@@ -93,15 +100,30 @@ get_psrc_ctpp_api <- function(table_code, dyear=2016, scale, geoids=NULL){
   # Get data
   data_url <- paste0("https://ctpp.macrosysrt.com/api/data/",
                 dyear, get_arg, scale_arg, geo_arg,"&format=list")
-  data_result <- api_gofer(data_url) %>% setDT() %>%
-    melt(id.vars=c("geoid","name"), variable.factor=FALSE) %>%
+  data_result <- api_gofer(data_url) %>% setDT()
+  melt_vars <- grep("^geoid$|name$", colnames(data_result), value=TRUE)
+  data_result %<>% melt(id.vars=melt_vars, variable.factor=FALSE) %>%
     .[, `:=`(valtype=str_sub(str_extract(variable,"_(e|m)\\d+$"),2L,2L),
              value=str2num(value), table_id=str_sub(variable, 1L, 7L),
              geoid=str_replace(geoid,"[ABC]\\d+US",""))] %>%
     .[labels, variable:=label, on=.(variable=name)] %>%
-    dcast(table_id + geoid + name + variable ~ valtype, value.var="value") %>%
-    setnames(c("geoid", "name", "variable", "e", "m"),
-             c("res_geoid", "res_label", "category", "estimate", "estimate_moe"),
-             skip_absent=TRUE)
+    dcast(... ~ valtype, value.var="value") %>%
+    setnames(c("variable", "e", "m"), c("category", "estimate", "estimate_moe"))
+  if(scale_ref$table_type==1){
+    data_result %<>% .[,c("work_geoid", "work_label"):=NA_character_] %>%
+      setnames(c("geoid","name"),c("res_geoid", "res_label"))
+  }else if(scale_ref$table_type==2){
+    data_result %<>% .[,c("res_geoid", "res_label"):=NA_character_] %>%
+      setnames(c("geoid","name"),c("work_geoid", "work_label"))
+  }else if(scale_ref$table_type==3){
+    data_result %<>% .[, `:=`(res_geoid=str_sub(geoid,3L,(2+scale_ref$res_len)),
+                              work_geoid=str_sub(geoid,-(scale_ref$work_len)))] %>%
+      .[, geoid:=NULL] %>%
+     setnames(c("origin_name","destination_name"),
+              c("res_label", "work_label"))
+  }
+  data_result %<>% setcolorder(sort(setdiff(colnames(.), c("category", "estimate", "estimate_moe")))) %>%
+    setcolorder("table_id")
+
   return(data_result)
 }

@@ -25,16 +25,16 @@ return(scale_refs)
 
 #' Retrieve CTPP data
 #'
-#' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
-#' @param table_code requested data table as string, e.g. "A302103"
 #' @param scale "county", "place", or "tract" for residence/workplace tables; "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
+#' @param table_code requested data table as string, e.g. "A302103"
+#' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
 #' @param geoids optional string vector of GEOID codes to limit the table
 #' @return data table
 #'
 #' @importFrom stringr str_sub str_extract str_replace
 #' @import data.table
 #' @export
-get_psrc_ctpp <- function(dyear=2016, table_code, scale, geoids=NULL){
+get_psrc_ctpp <- function(scale, table_code, dyear=2016, geoids=NULL){
   # Declare variables (to avoid package warnings)
   scale_refs <- scale_ref <- scale_filter <- scale_label <- dir <- val_lookup <- dt <- NULL
   rgeo <- wgeo <- geo_lookup <- res_geoid <- work_geoid <- res_label <- work_label <- NULL

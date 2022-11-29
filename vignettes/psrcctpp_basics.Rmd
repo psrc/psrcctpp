@@ -24,11 +24,11 @@ The primary drawback to CTPP data is the approximately 3-year lag to develop it;
 
 The psrcctpp package retrieves data one table at a time, with the **`get_psrc_ctpp()`** function. Its parameters are:
 
-  * **dyear** - aka data year, the last year of the CTPP span (i.e. 2016 for 2012-16)
-  * **table_code** - identifier (string) for the table you want
   * **scale** - for residence or workplace tables, either "county", "place", or "tract"
             for flow tables, either "county-county", "place-place", "place-county", "county-place", or "tract-tract"
             "block group" scale will be available starting with the 2017-21 survey.
+  * **table_code** - identifier (string) for the table you want
+  * **dyear** - aka data year, the last year of the CTPP span (i.e. 2016 for 2012-16)
   * (optional) list of **geoids** to restrict the table further
 
 The result is a standard dataframe. Notice that all results will include both res_geoid, res_label and work_geoid, work_label fields, but the work fields will be blank for residential tables and the residence fields will be blank for workplace tables. Strings are by default stored as characters rather than Factor datatype.
@@ -39,7 +39,7 @@ shhh(library(psrcctpp))
 shhh(library(magrittr))
 shhh(library(dplyr))
 
-x <- get_psrc_ctpp(2016, "A202105", "tract")
+x <- get_psrc_ctpp("tract", "A202105", 2016)
 head(x[,6:9])
 
 ```
