@@ -196,9 +196,10 @@ an aggregate of a smaller geography, e.g. tract or block group), you can
 create your own grouping variable, and then summarize using that
 variable in the <a href="https://psrc.github.io/psrcctpp/reference/ctpp_stat.html"><strong><code>psrc_ctpp_sum()</code></strong></a>
 function, as follows. Results include both estimates and corresponding
-margins of error. Notice the <strong><code>incl_na=</code></strong>
-option can be used to limit your results to relevant categories without
-being required to create a separate filtered data object.</p>
+margins of error. Notice the <strong><code>incl_na=FALSE</code></strong>
+option can be used to remove irrelevant categories without needing to
+create a separate filtered data object (<code>NA</code> values for
+relevant categories are still preserved).</p>
 <p>You can utilize the convenience function <a href="https://psrc.github.io/psrcctpp/reference/ctpp_shares.html"><strong><code>ctpp_shares()</code></strong></a>
 to append the share and share MOE to any CTPP dataset as long as it
 contains category totals (as is typically the case).</p>

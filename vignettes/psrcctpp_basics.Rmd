@@ -72,7 +72,7 @@ mutate(x, work_label=str_sub(work_label, 7L, 14L),    # abbreviate to fit in fra
 
 ## Aggregate CTPP data using custom variables
 
-CTPP data tables include totals as well as category breakdowns, but if you wish to define either a custom category or a custom geography (as an aggregate of a smaller geography, e.g. tract or block group), you can create your own grouping variable, and then summarize using that variable in the [**`psrc_ctpp_sum()`**](https://psrc.github.io/psrcctpp/reference/ctpp_stat.html) function, as follows. Results include both estimates and corresponding margins of error. Notice the **`incl_na=`** option can be used to limit your results to relevant categories without being required to create a separate filtered data object. 
+CTPP data tables include totals as well as category breakdowns, but if you wish to define either a custom category or a custom geography (as an aggregate of a smaller geography, e.g. tract or block group), you can create your own grouping variable, and then summarize using that variable in the [**`psrc_ctpp_sum()`**](https://psrc.github.io/psrcctpp/reference/ctpp_stat.html) function, as follows. Results include both estimates and corresponding margins of error. Notice the **`incl_na=FALSE`** option can be used to remove irrelevant categories without needing to create a separate filtered data object (`NA` values for relevant categories are still preserved).
   
 You can utilize the convenience function [**`ctpp_shares()`**](https://psrc.github.io/psrcctpp/reference/ctpp_shares.html) to append the share and share MOE to any CTPP dataset as long as it contains category totals (as is typically the case).
 
