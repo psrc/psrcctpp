@@ -20,36 +20,51 @@ Although it is derived from the American Community Survey (ACS), CTPP includes d
 
 The primary drawback to CTPP data is the approximately 3-year lag to develop it; since it's restricted to non-overlapping 5-year spans, it may involve a remove of nearly seven years from the conclusion of the first year in a reported span. Issues such as the transportation impacts accompanying the 2020 Covid pandemic have a long signature in the data (i.e. the next data without it would arrive around 2029).
 
-## Retrieve CTPP data
+## Identify and retrieve CTPP data
 
-The psrcctpp package retrieves data one table at a time, with the **`get_psrc_ctpp()`** function. Its parameters are:
+In order to request data, as with the ACS, one must know the CTPP table code (or variable codes). To assist in identifying this, the package has a search function, [**`ctpp_tblsearch()`**](https://psrc.github.io/psrcctpp/reference/ctpp_tblsearch.html). It has two parameters: a regular expression argument (**"regex"**) and the identifying **year** of the survey (i.e. the last of the 5-yr span, `2016` for the 2012-16 survey) and returns a list of matching tables. It can also help to know two basic code patterns: The first character of the table code identifies whether the table is original ("A", "as reported"; confidential data is suppressed) or perturbed ("B"; some noise infusion instead of suppression), and the second indicates either residences ("A1", "B1"), workplaces ("A2", "B2"), or flow data ("A3", "B3"). In our example, we're looking for a workplace-geography table showing mode, aka "means of transportation" in Census parlance.
 
-  * **scale** - for residence or workplace tables, either "county", "place", or "tract"
-            for flow tables, either "county-county", "place-place", "place-county", "county-place", or "tract-tract"
-            "block group" scale will be available starting with the 2017-21 survey.
-  * **table_code** - identifier (string) for the table you want
-  * **dyear** - aka data year, the last year of the CTPP span (i.e. 2016 for 2012-16)
-  * (optional) list of **geoids** to restrict the table further
-  * (optional) network **filepath** if the API is inoperable (use `"default"` unless you've saved another set; this requires PSRC VPN).
-
-The result is a standard dataframe. Notice that all results will include both res_geoid, res_label and work_geoid, work_label fields, but the work fields will be blank for residential tables and the residence fields will be blank for workplace tables. Strings are by default stored as characters rather than Factor datatype.
-
-```{r retrieval, include=TRUE}
+```{r search, include=TRUE}
 shhh <- suppressPackageStartupMessages
 shhh(library(psrcctpp))
 shhh(library(magrittr))
 shhh(library(dplyr))
+shhh(library(stringr))
 
-x <- get_psrc_ctpp("tract", "A202105", 2016)
-head(x[,c(1,5:8)])
+ctpp_tblsearch("means of transp.") %>%              # regex is not case-sensitive
+    filter(grepl("^[AB]2", name))  %>%              # limit to workplace geography
+    mutate(desc=str_sub(description, 1L, 50L)) %>%  # abbreviate to fit in frame
+    select(name, desc) %>% head()
+
+```
+In our example, the first table (A202105) is the one we're after. Notice, even if your attribute of interest is listed secondarily, there will typically be subtotals by that dimension alone within the table.
+
+Once we've identified the table code, we can now use the [**`get_psrc_ctpp()`**](https://psrc.github.io/psrcctpp/reference/get_psrc_ctpp.html) function to retrieve the data. Its parameters are:
+
+  * **scale** - for residence or workplace tables, either "county", "place", or "tract"  
+            for flow tables, either "county-county", "place-place", "place-county", "county-place", or "tract-tract"  
+            "block group" scale will be available starting with the 2017-21 survey.  
+  * **table_code** - identifier (string) for the table you want (you can also request individual variables)
+  * **dyear** - aka data year, the last year of the CTPP span (i.e. 2016 for 2012-16)
+  * (optional) list of **geoids** to restrict the table further
+  * (optional) network **filepath** if the API is inoperable (unless you've saved your own set, use the term `"default"`; this requires PSRC VPN).
+
+The result is a standard dataframe. Notice that all results will include both res_geoid, res_label and work_geoid, work_label fields, but the work fields will be blank for residential tables and the residence fields will be blank for workplace tables. Strings are by default stored as characters rather than Factor datatype.
+
+```{r retrieval, include=TRUE}
+x <- get_psrc_ctpp("tract", "A202105", 2016)          # get data
+
+mutate(x, work_label=str_sub(work_label, 7L, 14L),    # abbreviate to fit in frame
+          cateogry  =str_sub(category, 1L, 15L)) %>%
+  select(5:8) %>% head()                   
 
 ```
 
 ## Create custom variables and use them to aggregate CTPP data
 
-CTPP data tables include totals as well as category breakdowns, but if you wish to define either a custom category or a custom geography (as an aggregate of a smaller geography, e.g. tract or block group), you can create your own grouping variable, and then summarize using that variable, as follows. Notice the **`incl_na=`** option can be used to limit your results without needing to filter the input data first.
+CTPP data tables include totals as well as category breakdowns, but if you wish to define either a custom category or a custom geography (as an aggregate of a smaller geography, e.g. tract or block group), you can create your own grouping variable, and then summarize using that variable in the [**`psrc_ctpp_sum()`**](https://psrc.github.io/psrcctpp/reference/ctpp_stat.html) function, as follows. Notice the **`incl_na=`** option can be used to limit your results without needing to filter the input data first.
   
-You can utilize the convenience function **`ctpp_shares()`** to append the share and share MOE to any CTPP dataset (as long as it contains category totals, as is typically true).
+You can utilize the convenience function [**`ctpp_shares()`**](https://psrc.github.io/psrcctpp/reference/ctpp_shares.html) to append the share and share MOE to any CTPP dataset (as long as it contains category totals, as is typically true).
 
 ```{r summation, include=TRUE}
 shhh(library(stringr))
