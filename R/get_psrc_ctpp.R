@@ -106,7 +106,7 @@ fetch_ctpp_from_file <- function(scale, table_code, dyear, filepath="default"){
     .[, c("est", "moe"):=lapply(.SD, str2num), .SDcols=c("est", "moe")] %>%
     .[grepl(paste0("^C", sprintf("%02i", scale_ref$scale_id)), geoid)] %>% setkeyv(c("tbl_id","lineno")) %>%
     .[val_lookup, category:=ldesc, on=key(.)]
-  dt[, (c("res_geoid","res_label","work_geoid","work_label")):=""]
+  dt[, (c("res_geoid","res_label","work_geoid","work_label")):=NA_character_]
   if(scale_ref$table_type %in% c(1,3)){
     dt %<>% .[, res_geoid:=str_sub(str_extract(geoid,"US\\d+"),3L,(2+scale_ref$res_len))]
     dt[geo_lookup, res_label:=name, on=.(res_geoid=geoid)]
@@ -233,7 +233,7 @@ get_psrc_ctpp <- function(scale, table_code, dyear=2016, geoids=NULL, filepath=N
     dt %<>% .[(res_geoid %in% geoids)|(work_geoid %in% geoids)]
   }else{
     if(scale_ref$scale_id %in% c(5,25,45,50,51)){
-      psrc_places <- psrccensus::get_psrc_places(dyear) %>% sf::st_drop_geometry() %>% unique()
+      psrc_places <- suppressMessages(psrccensus::get_psrc_places(dyear)) %>% sf::st_drop_geometry() %>% unique()
       dt %<>% .[(res_geoid %in% psrc_places$GEOID)|(work_geoid %in% psrc_places$GEOID)]
     }else{
       pat <- paste0("^53", psrc_counties, collapse="|")
