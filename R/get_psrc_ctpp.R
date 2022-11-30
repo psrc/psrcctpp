@@ -29,19 +29,23 @@ api_gofer <- function(url){
 
 #' Search CTPP table codes
 #'
-#' @param regex string pattern to match
+#' @param prefix 2-character pattern: see \code{vignette("psrcctpp_basics", package = "psrcctpp")}
+#' @param regex string pattern to match table description
 #' @param year last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
 #' @return data table
 #'
 #' @import data.table
+#' @importFrom stringr str_sub
+#' @importFrom rlang is_empty
 #' @export
-ctpp_tblsearch <- function(regex, year=2016) {
-  description <- universe <- NULL # Declare for documentation purposes
+ctpp_tblsearch <- function(prefix, regex, year=2016) {
+  description <- universe <- name <- NULL # Declare for documentation purposes
+  if(grepl("[AB\\?][123\\?]", prefix) & !is_empty(regex)){
   url <- paste0("https://ctpp.macrosysrt.com/api/groups?year=", year)
   result <- api_gofer(url) %>% setDT() %>%
-    .[grepl(regex, description, ignore.case=TRUE)|
-        grepl(regex, universe, ignore.case=TRUE)]
+    .[grepl(prefix, str_sub(name, 1L, 2L)) & grepl(regex, description, ignore.case=TRUE)]
   return(result)
+  }else{message("Parameters must be strings; prefix is length 2, i.e. A or")}
 }
 
 #' Correspondence table for CTPP codes, table type, and scale

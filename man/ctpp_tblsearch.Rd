@@ -4,10 +4,12 @@
 \alias{ctpp_tblsearch}
 \title{Search CTPP table codes}
 \usage{
-ctpp_tblsearch(regex, year = 2016)
+ctpp_tblsearch(prefix, regex, year = 2016)
 }
 \arguments{
-\item{regex}{string pattern to match}
+\item{prefix}{2-character pattern: see \code{vignette("psrcctpp_basics", package = "psrcctpp")}}
+
+\item{regex}{string pattern to match table description}
 
 \item{year}{last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey}
 }

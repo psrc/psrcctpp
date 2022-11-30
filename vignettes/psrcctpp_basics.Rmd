@@ -22,7 +22,16 @@ The primary drawback to CTPP data is the approximately 3-year lag to develop it;
 
 ## Identify and retrieve CTPP data
 
-In order to request data, as with the ACS, one must know the CTPP table code (or variable codes). To assist in identifying this, the package has a search function, [**`ctpp_tblsearch()`**](https://psrc.github.io/psrcctpp/reference/ctpp_tblsearch.html). It has two parameters: a regular expression argument (**"regex"**) and the identifying **year** of the survey (i.e. the last of the 5-yr span, `2016` for the 2012-16 survey) and returns a list of matching tables. It can also help to know two basic code patterns: The first character of the table code identifies whether the table is original ("A", "as reported"; confidential data is suppressed) or perturbed ("B"; some noise infusion instead of suppression), and the second indicates either residences ("A1", "B1"), workplaces ("A2", "B2"), or flow data ("A3", "B3"). In our example, we're looking for a workplace-geography table showing mode, aka "means of transportation" in Census parlance.
+### Determine which table to request
+
+In order to request data, as with the ACS, one must know the CTPP table code (or variable codes). To assist in identifying this, the package has a search function, [**`ctpp_tblsearch()`**](https://psrc.github.io/psrcctpp/reference/ctpp_tblsearch.html). It has two required parameters: 
+
+  * **prefix** - CTPP uses a pattern in table names: the first character denotes whether a table is originally reported data ("A"; confidential data is suppressed) or perturbed ("B"; some noise infusion instead of suppression), and the second indicates either residence geography ("1"), workplace geography ("2"), or flows ("3", i.e. both residence and workplace geography). For example, a table for original workplace geography uses the prefix "A2". The function argument can also use a question mark in place of these characters, if you're not particular about one or the other (or either), i.e. "?3" would show all relevant flow tables, regardless of whether they are original or perturbed data.
+
+  * **"regex"** - This is the regular expression search term to find in the table description. It is not case-sensitive.
+  * (optional) **year** - i.e. specify which survey; otherwise defaults to latest (currently 2012-16)
+  
+In our example, we're looking for a workplace-geography table showing mode, aka "means of transportation" in Census parlance.
 
 ```{r search, include=TRUE}
 shhh <- suppressPackageStartupMessages
@@ -31,13 +40,14 @@ shhh(library(magrittr))
 shhh(library(dplyr))
 shhh(library(stringr))
 
-ctpp_tblsearch("means of transp.") %>%              # regex is not case-sensitive
-    filter(grepl("^[AB]2", name))  %>%              # limit to workplace geography
+ctpp_tblsearch("?2", "means of transp.") %>%
     mutate(desc=str_sub(description, 1L, 50L)) %>%  # abbreviate to fit in frame
     select(name, desc) %>% head()
 
 ```
 In our example, the first table (A202105) is the one we're after. Notice, even if your attribute of interest is listed secondarily, there will typically be subtotals by that dimension alone within the table.
+
+### Get the data
 
 Once we've identified the table code, we can now use the [**`get_psrc_ctpp()`**](https://psrc.github.io/psrcctpp/reference/get_psrc_ctpp.html) function to retrieve the data. Its parameters are:
 
@@ -46,10 +56,10 @@ Once we've identified the table code, we can now use the [**`get_psrc_ctpp()`**]
             "block group" scale will be available starting with the 2017-21 survey.  
   * **table_code** - identifier (string) for the table you want (you can also request individual variables)
   * **dyear** - aka data year, the last year of the CTPP span (i.e. 2016 for 2012-16)
-  * (optional) list of **geoids** to restrict the table further
-  * (optional) network **filepath** if the API is inoperable (unless you've saved your own set, use the term `"default"`; this requires PSRC VPN).
 
-The result is a standard dataframe. Notice that all results will include both res_geoid, res_label and work_geoid, work_label fields, but the work fields will be blank for residential tables and the residence fields will be blank for workplace tables. Strings are by default stored as characters rather than Factor datatype.
+By default, the resulting dataframe is restricted to geographies within the Central Puget Sound region (or flows with one end within the region). To specify a narrower set--or geographies outside the region--you can provide a character vector using the optional **geoids** argument containing the desired FIPS codes.
+
+Notice that all results will include both res_geoid, res_label and work_geoid, work_label fields, but the work fields will be `NA` for residential tables and the residence fields will be `NA` for workplace tables. Strings are by default stored as characters rather than Factor datatype.
 
 ```{r retrieval, include=TRUE}
 x <- get_psrc_ctpp("tract", "A202105", 2016)          # get data
@@ -60,14 +70,13 @@ mutate(x, work_label=str_sub(work_label, 7L, 14L),    # abbreviate to fit in fra
 
 ```
 
-## Create custom variables and use them to aggregate CTPP data
+## Aggregate CTPP data using custom variables
 
-CTPP data tables include totals as well as category breakdowns, but if you wish to define either a custom category or a custom geography (as an aggregate of a smaller geography, e.g. tract or block group), you can create your own grouping variable, and then summarize using that variable in the [**`psrc_ctpp_sum()`**](https://psrc.github.io/psrcctpp/reference/ctpp_stat.html) function, as follows. Notice the **`incl_na=`** option can be used to limit your results without needing to filter the input data first.
+CTPP data tables include totals as well as category breakdowns, but if you wish to define either a custom category or a custom geography (as an aggregate of a smaller geography, e.g. tract or block group), you can create your own grouping variable, and then summarize using that variable in the [**`psrc_ctpp_sum()`**](https://psrc.github.io/psrcctpp/reference/ctpp_stat.html) function, as follows. Results include both estimates and corresponding margins of error. Notice the **`incl_na=`** option can be used to limit your results to relevant categories without being required to create a separate filtered data object. 
   
-You can utilize the convenience function [**`ctpp_shares()`**](https://psrc.github.io/psrcctpp/reference/ctpp_shares.html) to append the share and share MOE to any CTPP dataset (as long as it contains category totals, as is typically true).
+You can utilize the convenience function [**`ctpp_shares()`**](https://psrc.github.io/psrcctpp/reference/ctpp_shares.html) to append the share and share MOE to any CTPP dataset as long as it contains category totals (as is typically the case).
 
 ```{r summation, include=TRUE}
-shhh(library(stringr))
 x %<>% mutate(
   custom_geo=case_when(
                str_sub(work_geoid,4L,11L) %in% paste0("3302380",3:4)         ~ "Downtown Bellevue",

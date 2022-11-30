@@ -92,20 +92,33 @@ accompanying the 2020 Covid pandemic have a long signature in the data
 <div class="section level2">
 <h2 id="identify-and-retrieve-ctpp-data">Identify and retrieve CTPP data<a class="anchor" aria-label="anchor" href="#identify-and-retrieve-ctpp-data"></a>
 </h2>
+<div class="section level3">
+<h3 id="determine-which-table-to-request">Determine which table to request<a class="anchor" aria-label="anchor" href="#determine-which-table-to-request"></a>
+</h3>
 <p>In order to request data, as with the ACS, one must know the CTPP
 table code (or variable codes). To assist in identifying this, the
 package has a search function, <a href="https://psrc.github.io/psrcctpp/reference/ctpp_tblsearch.html"><strong><code>ctpp_tblsearch()</code></strong></a>.
-It has two parameters: a regular expression argument
-(<strong>“regex”</strong>) and the identifying <strong>year</strong> of
-the survey (i.e. the last of the 5-yr span, <code>2016</code> for the
-2012-16 survey) and returns a list of matching tables. It can also help
-to know two basic code patterns: The first character of the table code
-identifies whether the table is original (“A”, “as reported”;
-confidential data is suppressed) or perturbed (“B”; some noise infusion
-instead of suppression), and the second indicates either residences
-(“A1”, “B1”), workplaces (“A2”, “B2”), or flow data (“A3”, “B3”). In our
-example, we’re looking for a workplace-geography table showing mode, aka
-“means of transportation” in Census parlance.</p>
+It has two required parameters:</p>
+<ul>
+<li><p><strong>prefix</strong> - CTPP uses a pattern in table names: the
+first character denotes whether a table is originally reported data
+(“A”; confidential data is suppressed) or perturbed (“B”; some noise
+infusion instead of suppression), and the second indicates either
+residence geography (“1”), workplace geography (“2”), or flows (“3”,
+i.e. both residence and workplace geography). For example, a table for
+original workplace geography uses the prefix “A2”. The function argument
+can also use a question mark in place of these characters, if you’re not
+particular about one or the other (or either), i.e. “?3” would show all
+relevant flow tables, regardless of whether they are original or
+perturbed data.</p></li>
+<li><p><strong>“regex”</strong> - This is the regular expression search
+term to find in the table description. It is not
+case-sensitive.</p></li>
+<li><p>(optional) <strong>year</strong> - i.e. specify which survey;
+otherwise defaults to latest (currently 2012-16)</p></li>
+</ul>
+<p>In our example, we’re looking for a workplace-geography table showing
+mode, aka “means of transportation” in Census parlance.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shhh</span> <span class="op">&lt;-</span> <span class="va">suppressPackageStartupMessages</span></span>
 <span><span class="fu">shhh</span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://psrc.github.io/psrcctpp/">psrcctpp</a></span><span class="op">)</span><span class="op">)</span></span>
@@ -113,8 +126,7 @@ example, we’re looking for a workplace-geography table showing mode, aka
 <span><span class="fu">shhh</span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">shhh</span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://stringr.tidyverse.org" class="external-link">stringr</a></span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/ctpp_tblsearch.html">ctpp_tblsearch</a></span><span class="op">(</span><span class="st">"means of transp."</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>              <span class="co"># regex is not case-sensitive</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^[AB]2"</span>, <span class="va">name</span><span class="op">)</span><span class="op">)</span>  <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>              <span class="co"># limit to workplace geography</span></span>
+<span><span class="fu"><a href="../reference/ctpp_tblsearch.html">ctpp_tblsearch</a></span><span class="op">(</span><span class="st">"?2"</span>, <span class="st">"means of transp."</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>desc<span class="op">=</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html" class="external-link">str_sub</a></span><span class="op">(</span><span class="va">description</span>, <span class="fl">1L</span>, <span class="fl">50L</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>  <span class="co"># abbreviate to fit in frame</span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">desc</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##       name                                               desc</span></span>
@@ -128,6 +140,10 @@ example, we’re looking for a workplace-geography table showing mode, aka
 Notice, even if your attribute of interest is listed secondarily, there
 will typically be subtotals by that dimension alone within the
 table.</p>
+</div>
+<div class="section level3">
+<h3 id="get-the-data">Get the data<a class="anchor" aria-label="anchor" href="#get-the-data"></a>
+</h3>
 <p>Once we’ve identified the table code, we can now use the <a href="https://psrc.github.io/psrcctpp/reference/get_psrc_ctpp.html"><strong><code>get_psrc_ctpp()</code></strong></a>
 function to retrieve the data. Its parameters are:</p>
 <ul>
@@ -145,17 +161,17 @@ want (you can also request individual variables)</li>
 <li>
 <strong>dyear</strong> - aka data year, the last year of the CTPP
 span (i.e. 2016 for 2012-16)</li>
-<li>(optional) list of <strong>geoids</strong> to restrict the table
-further</li>
-<li>(optional) network <strong>filepath</strong> if the API is
-inoperable (unless you’ve saved your own set, use the term
-<code>"default"</code>; this requires PSRC VPN).</li>
 </ul>
-<p>The result is a standard dataframe. Notice that all results will
-include both res_geoid, res_label and work_geoid, work_label fields, but
-the work fields will be blank for residential tables and the residence
-fields will be blank for workplace tables. Strings are by default stored
-as characters rather than Factor datatype.</p>
+<p>By default, the resulting dataframe is restricted to geographies
+within the Central Puget Sound region (or flows with one end within the
+region). To specify a narrower set–or geographies outside the region–you
+can provide a character vector using the optional
+<strong>geoids</strong> argument containing the desired FIPS codes.</p>
+<p>Notice that all results will include both res_geoid, res_label and
+work_geoid, work_label fields, but the work fields will be
+<code>NA</code> for residential tables and the residence fields will be
+<code>NA</code> for workplace tables. Strings are by default stored as
+characters rather than Factor datatype.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_psrc_ctpp.html">get_psrc_ctpp</a></span><span class="op">(</span><span class="st">"tract"</span>, <span class="st">"A202105"</span>, <span class="fl">2016</span><span class="op">)</span>          <span class="co"># get data</span></span>
 <span></span>
@@ -170,23 +186,24 @@ as characters rather than Factor datatype.</p>
 <span><span class="co">## 5:    Tract 1 Car, truck, or van -- In a 3-person carpool       NA           NA</span></span>
 <span><span class="co">## 6:    Tract 1 Car, truck, or van -- In a 4-person carpool       NA           NA</span></span></code></pre>
 </div>
+</div>
 <div class="section level2">
-<h2 id="create-custom-variables-and-use-them-to-aggregate-ctpp-data">Create custom variables and use them to aggregate CTPP data<a class="anchor" aria-label="anchor" href="#create-custom-variables-and-use-them-to-aggregate-ctpp-data"></a>
+<h2 id="aggregate-ctpp-data-using-custom-variables">Aggregate CTPP data using custom variables<a class="anchor" aria-label="anchor" href="#aggregate-ctpp-data-using-custom-variables"></a>
 </h2>
 <p>CTPP data tables include totals as well as category breakdowns, but
 if you wish to define either a custom category or a custom geography (as
 an aggregate of a smaller geography, e.g. tract or block group), you can
 create your own grouping variable, and then summarize using that
 variable in the <a href="https://psrc.github.io/psrcctpp/reference/ctpp_stat.html"><strong><code>psrc_ctpp_sum()</code></strong></a>
-function, as follows. Notice the <strong><code>incl_na=</code></strong>
-option can be used to limit your results without needing to filter the
-input data first.</p>
+function, as follows. Results include both estimates and corresponding
+margins of error. Notice the <strong><code>incl_na=</code></strong>
+option can be used to limit your results to relevant categories without
+being required to create a separate filtered data object.</p>
 <p>You can utilize the convenience function <a href="https://psrc.github.io/psrcctpp/reference/ctpp_shares.html"><strong><code>ctpp_shares()</code></strong></a>
-to append the share and share MOE to any CTPP dataset (as long as it
-contains category totals, as is typically true).</p>
+to append the share and share MOE to any CTPP dataset as long as it
+contains category totals (as is typically the case).</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">shhh</span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://stringr.tidyverse.org" class="external-link">stringr</a></span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">x</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/compound.html" class="external-link">%&lt;&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">x</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/compound.html" class="external-link">%&lt;&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>  custom_geo<span class="op">=</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/case_when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
 <span>               <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html" class="external-link">str_sub</a></span><span class="op">(</span><span class="va">work_geoid</span>,<span class="fl">4L</span>,<span class="fl">11L</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"3302380"</span>,<span class="fl">3</span><span class="op">:</span><span class="fl">4</span><span class="op">)</span>         <span class="op">~</span> <span class="st">"Downtown Bellevue"</span>,</span>
 <span>               <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html" class="external-link">str_sub</a></span><span class="op">(</span><span class="va">work_geoid</span>,<span class="fl">4L</span>,<span class="fl">11L</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"61040"</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">7</span><span class="op">:</span><span class="fl">8</span><span class="op">)</span>,<span class="st">"00"</span><span class="op">)</span> <span class="op">~</span> <span class="st">"Downtown Everett"</span>,</span>
@@ -198,7 +215,7 @@ contains category totals, as is typically true).</p>
 <span>                     <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">category</span><span class="op">)</span>                                   <span class="op">~</span><span class="va">category</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">rs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ctpp_stat.html">psrc_ctpp_sum</a></span><span class="op">(</span><span class="va">x</span>, group_vars<span class="op">=</span><span class="st">"custom_geo"</span>, incl_na<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="../reference/ctpp_shares.html">ctpp_shares</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">rs</span><span class="op">[</span>,<span class="fl">2</span><span class="op">:</span><span class="fl">7</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 6 × 6</span></span>m</span>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 6 × 6</span></span></span>
 <span><span class="co">##   custom_geo        category     estimate estimate_moe   share share_moe</span></span>
 <span><span class="co">##   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">## <span style="color: #BCBCBC;">1</span> Downtown Bellevue Bike/Ped         <span style="text-decoration: underline;">2</span>300        451.  0.064<span style="text-decoration: underline;">3</span>    0.012<span style="text-decoration: underline;">3</span> </span></span>
