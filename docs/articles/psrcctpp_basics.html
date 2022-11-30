@@ -176,15 +176,15 @@ characters rather than Factor datatype.</p>
 <code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_psrc_ctpp.html">get_psrc_ctpp</a></span><span class="op">(</span><span class="st">"tract"</span>, <span class="st">"A202105"</span>, <span class="fl">2016</span><span class="op">)</span>          <span class="co"># get data</span></span>
 <span></span>
 <span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="va">x</span>, work_label<span class="op">=</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html" class="external-link">str_sub</a></span><span class="op">(</span><span class="va">work_label</span>, <span class="fl">7L</span>, <span class="fl">14L</span><span class="op">)</span>,    <span class="co"># abbreviate to fit in frame</span></span>
-<span>          cateogry  <span class="op">=</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html" class="external-link">str_sub</a></span><span class="op">(</span><span class="va">category</span>, <span class="fl">1L</span>, <span class="fl">15L</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>          category  <span class="op">=</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html" class="external-link">str_sub</a></span><span class="op">(</span><span class="va">category</span>, <span class="fl">1L</span>, <span class="fl">15L</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="fl">5</span><span class="op">:</span><span class="fl">8</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span>                   </span></code></pre></div>
-<pre><code><span><span class="co">##    work_label                                    category estimate estimate_moe</span></span>
-<span><span class="co">## 1:    Tract 1                                     Bicycle       NA           NA</span></span>
-<span><span class="co">## 2:    Tract 1                          Bus or trolley bus      205           96</span></span>
-<span><span class="co">## 3:    Tract 1           Car, truck, or van -- Drove alone      900          244</span></span>
-<span><span class="co">## 4:    Tract 1 Car, truck, or van -- In a 2-person carpool       70           54</span></span>
-<span><span class="co">## 5:    Tract 1 Car, truck, or van -- In a 3-person carpool       NA           NA</span></span>
-<span><span class="co">## 6:    Tract 1 Car, truck, or van -- In a 4-person carpool       NA           NA</span></span></code></pre>
+<pre><code><span><span class="co">##    work_label        category estimate estimate_moe</span></span>
+<span><span class="co">## 1:    Tract 1         Bicycle       NA           NA</span></span>
+<span><span class="co">## 2:    Tract 1 Bus or trolley       205           96</span></span>
+<span><span class="co">## 3:    Tract 1 Car, truck, or       900          244</span></span>
+<span><span class="co">## 4:    Tract 1 Car, truck, or        70           54</span></span>
+<span><span class="co">## 5:    Tract 1 Car, truck, or        NA           NA</span></span>
+<span><span class="co">## 6:    Tract 1 Car, truck, or        NA           NA</span></span></code></pre>
 </div>
 </div>
 <div class="section level2">

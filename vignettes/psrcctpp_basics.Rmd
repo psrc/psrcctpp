@@ -65,7 +65,7 @@ Notice that all results will include both res_geoid, res_label and work_geoid, w
 x <- get_psrc_ctpp("tract", "A202105", 2016)          # get data
 
 mutate(x, work_label=str_sub(work_label, 7L, 14L),    # abbreviate to fit in frame
-          cateogry  =str_sub(category, 1L, 15L)) %>%
+          category  =str_sub(category, 1L, 15L)) %>%
   select(5:8) %>% head()                   
 
 ```
