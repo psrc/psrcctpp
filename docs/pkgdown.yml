@@ -3,7 +3,8 @@ pkgdown: 2.0.6
 pkgdown_sha: ~
 articles:
   psrcctpp_basics: psrcctpp_basics.html
-last_built: 2022-11-30T22:00Z
+  tips_and_tricks: tips_and_tricks.html
+last_built: 2022-12-01T04:16Z
 urls:
   reference: https://psrc.github.io/psrcctpp/reference
   article: https://psrc.github.io/psrcctpp/articles

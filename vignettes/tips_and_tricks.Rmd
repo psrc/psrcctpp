@@ -1,0 +1,51 @@
+---
+title: "psrcctpp tips & tricks"
+description: >
+  Additional options for power users
+output: html_vignette
+vignette: >
+  %\VignetteIndexEntry{psrcctpp tips & tricks}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+### Querying by variable
+
+In addition to requesting entire tables, the package/API can return individual variables. If you prefer this, you'll need to identify the variable codes, so naturally there's a **`ctpp_varsearch`** function to assist; the only parameter is the table code in question. Once these codes are identified, their character vector can be used as the second argument (`table_code`) `get_psrc_ctpp()`.
+
+```{r query.variables, include=TRUE}
+shhh <- suppressPackageStartupMessages
+shhh(library(psrcctpp))
+shhh(library(magrittr))
+shhh(library(dplyr))
+shhh(library(stringr))
+
+ctpp_varsearch("A101101") %>% head()
+
+x <- get_psrc_ctpp(scale="tract", 
+                   table_code=c("A101101_e1","A101101_e2"), # Variable list instead of table
+                   dyear=2016)
+
+mutate(x, res_label=str_sub(res_label, 7L, 14L),           # abbreviate to fit in frame
+          category =str_sub(category, 1L, 15L)) %>%
+  select(c(3,6:8)) %>% head()                   
+
+```
+
+### Bypassing the API
+
+In the unlikely event of API downtime, an older method exists in the package to read CTPP ftp files  pre-downloaded to a network location (it takes too long to download the entire ftp zipfile for each call). To use this fallback option, specify `get_psrc_ctpp( ...,  filepath="default")` while on PSRC VPN. It is also possible to go completely offline by saving a full copy to a local directory, then specifying that directory in place of `"default"`. There is no API-free fallback for the table and variable lookup functions, however.
+
+```{r filepath, include=TRUE}
+y <- get_psrc_ctpp("tract", "A101101", 2016, filepath="default")
+
+mutate(y, res_label=str_sub(res_label, 7L, 14L),    # abbreviate to fit in frame
+          category =str_sub(category, 1L, 15L)) %>%
+  select(c(3,6:8)) %>% head()    
+
+```

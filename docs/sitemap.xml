@@ -10,6 +10,9 @@
     <loc>https://psrc.github.io/psrcctpp/articles/psrcctpp_basics.html</loc>
   </url>
   <url>
+    <loc>https://psrc.github.io/psrcctpp/articles/tips_and_tricks.html</loc>
+  </url>
+  <url>
     <loc>https://psrc.github.io/psrcctpp/authors.html</loc>
   </url>
   <url>
@@ -29,6 +32,9 @@
   </url>
   <url>
     <loc>https://psrc.github.io/psrcctpp/reference/ctpp_tblsearch.html</loc>
+  </url>
+  <url>
+    <loc>https://psrc.github.io/psrcctpp/reference/ctpp_varsearch.html</loc>
   </url>
   <url>
     <loc>https://psrc.github.io/psrcctpp/reference/fetch_ctpp_from_api.html</loc>

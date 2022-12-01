@@ -5,7 +5,7 @@ NULL
 globalVariables(c(":=", "!!", ".", "enquos"))
 psrc_counties <- c("033","035","053","061")
 
-str2num <- function(x){as.numeric(stringr::str_replace_all(x,"(\\+/-)|,",""))}
+str2num <- function(x){as.numeric(stringr::str_replace_all(x,"(\\+/-)|,|\\*+",""))}
 `%not_in%` <- Negate(`%in%`)
 
 #' Fetch API results
@@ -106,7 +106,7 @@ fetch_ctpp_from_file <- function(scale, table_code, dyear, filepath="default"){
   dir <- if_else(dyear==2010,"2006_2010/","2012_2016/") %>%
     paste0(if_else(filepath!="default", filepath, "X:/DSA/Census/CTPP/"), .)
   val_lookup <- paste0(dir,"acs_ctpp_2012thru2016_table_shell.txt") %>% fread(showProgress=FALSE) %>%
-       setnames("tblid", "tbl_id") %>% setkeyv(c("tblid","lineno"))
+      setnames(tolower(colnames(.))) %>% setnames("tblid", "table_id") %>% setkeyv(c("table_id","lineno"))
 
   # Steps for ftp files already saved to network file
   # scale_filter <- paste0("^C", sprintf("%02i",scale_ref$scale_id), "\\w+",collapse="|")
@@ -122,9 +122,10 @@ fetch_ctpp_from_file <- function(scale, table_code, dyear, filepath="default"){
 
   # Load primary datatable; filter by scale, geoid; attach value and geography labels
   targetfile <- paste0("WA_", as.character(dyear-4), "thru", dyear, "_") %>% paste0(dir, ., table_code, ".csv")
-  dt <- fread(targetfile, showProgress=FALSE) %>%
+  dt <- fread(targetfile, showProgress=FALSE) %>% setnames(tolower(colnames(.))) %>%
     .[, c("est", "moe"):=lapply(.SD, str2num), .SDcols=c("est", "moe")] %>%
-    .[grepl(paste0("^C", sprintf("%02i", scale_ref$scale_id)), geoid)] %>% setkeyv(c("tbl_id","lineno")) %>%
+    .[grepl(paste0("^C", sprintf("%02i", scale_ref$scale_id)), geoid)] %>%
+    setnames("tblid", "table_id")  %>% setkeyv(c("table_id","lineno")) %>%
     .[val_lookup, category:=ldesc, on=key(.)]
   dt[, (c("res_geoid","res_label","work_geoid","work_label")):=NA_character_]
   if(scale_ref$table_type %in% c(1,3)){
@@ -136,7 +137,7 @@ fetch_ctpp_from_file <- function(scale, table_code, dyear, filepath="default"){
     dt[geo_lookup, work_label:=name, on=.(work_geoid=geoid)]
   }
   dt %<>% .[, c("geoid","source","lineno"):=NULL] %>%
-    setnames(c("EST", "MOE"), c("estimate", "estimate_moe"))
+    setnames(c("est", "moe"), c("estimate", "estimate_moe"))
   return(dt)
 }
 
@@ -266,8 +267,8 @@ get_psrc_ctpp <- function(scale, table_code, dyear=2016, geoids=NULL, filepath=N
       dt %<>% .[(grepl(pat, res_geoid))|(grepl(pat, work_geoid))]
     }
   }
-  # Column ordering
-  dt %<>% setcolorder(sort(setdiff(colnames(.), c("category", "estimate", "estimate_moe")))) %>%
+  # Order columns
+  dt %<>% setcolorder(sort(setdiff(colnames(dt), c("category", "estimate", "estimate_moe")))) %>%
     setcolorder("table_id")
   return(dt)
 }
