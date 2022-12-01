@@ -19,7 +19,7 @@ str2num <- function(x){as.numeric(stringr::str_replace_all(x,"(\\+/-)|,",""))}
 api_gofer <- function(url){
   h <- c("x-api-key"=Sys.getenv("CTPP_API_KEY"), "accept"="application/json")
   resp <- GET(url, add_headers(.headers=h))
-  if (http_type(resp)!="application/json") {
+  if(http_type(resp)!="application/json"){
     stop("API did not return json", call.=FALSE)
   }
   result <- fromJSON(content(resp, "text", encoding="UTF-8"),
@@ -46,6 +46,22 @@ ctpp_tblsearch <- function(prefix, regex, year=2016) {
     .[grepl(prefix, str_sub(name, 1L, 2L)) & grepl(regex, description, ignore.case=TRUE)]
   return(result)
   }else{message("Parameters must be strings; prefix is length 2, i.e. A or")}
+}
+
+#' Search CTPP variable codes
+#'
+#' @param table_code requested data table as string, e.g. "A302103"
+#' @param year last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+#' @return data table
+#'
+#' @import data.table
+#' @export
+ctpp_varsearch <- function(table_code, year=2016){
+  group <- name <- NULL # Declare for documentation purposes
+  url <- paste0("https://ctpp.macrosysrt.com/api/groups/", table_code, "/variables?year=", year)
+  result <- api_gofer(url) %>% setDT() %>% .[group==table_code & grepl("_e", name)] %>%
+    .[,group:=NULL]
+  return(result)
 }
 
 #' Correspondence table for CTPP codes, table type, and scale
@@ -146,22 +162,26 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids){
   if(length(tbl)>1){return("Requested variables must come from the same table.")}
   get_arg <- paste0("?get=",
                     if(length(table_code)>1){
-                      paste0(table_code, collapse=",")
+                      paste0(c(tolower(table_code),
+                             (str_replace(tolower(table_code),"e","m"))), # add codes for moe
+                             collapse="%2C")
                     }else{
                       paste0("group%28", tolower(table_code), "%29")})
   scale_arg <- if(!grepl("-", scale)){paste0("&for=", scale)
   }else{paste0("&for=", str_split(scale, "-")[[1]][1],
                "&d-for=", str_split(scale, "-")[[1]][2])}
   if(is.null(geoids)){
-    if(grepl("^\\w+\\b",scale) %in% c("county","tract")){
+    if(grep("^\\w+\\b", scale, value=TRUE) %in% c("county","tract")){
       geo_arg <- paste0("&in=county%3A", paste0(psrc_counties, collapse="%2C"),"&in=state%3A53")
     }else{
       geo_arg <- "&in=state%3A53"
     }
-    if(grepl("-\\w+$",scale) %in% c("-county","-tract")){
+    if(grepl("-\\w+$", scale)){
+      if(grep("-\\w+$", scale, value=TRUE) %in% c("-county","-tract")){
       geo_arg %<>% paste0("&d-in=county%3A", paste0(psrc_counties, collapse="%2C"),"&d-in=state%3A53")
-    }else if(grepl("-\\w+$", scale)=="-place"){
+      }else if(grep("-\\w+$", scale, value=TRUE)=="-place"){
       geo_arg %<>% "&d-in=state%3A53"
+      }
     }
   }else{
     geo_len <- lapply(geoids, length) %>% unique()
@@ -177,7 +197,8 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids){
   labels_url <- paste0("https://ctpp.macrosysrt.com/api/groups/",
                        tbl, "/variables?year=",dyear)
   labels <- api_gofer(labels_url) %>% setDT() %>%
-    .[grepl((tbl), name, ignore.case=TRUE),.(name, label)] %>% unique
+    .[grepl((tbl), name, ignore.case=TRUE),.(name, label)] %>%
+    .[, name:=tolower(name)] %>% unique()
 
   # Get data
   data_url <- paste0("https://ctpp.macrosysrt.com/api/data/",
@@ -187,6 +208,7 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids){
   dt %<>% melt(id.vars=melt_vars, variable.factor=FALSE) %>%
     .[, `:=`(valtype=str_sub(str_extract(variable,"_(e|m)\\d+$"),2L,2L),
              value=str2num(value), table_id=str_sub(variable, 1L, 7L),
+             variable=tolower(variable),
              geoid=str_replace(geoid,"[ABC]\\d+US",""))] %>%
     .[labels, variable:=label, on=.(variable=name)] %>%
     dcast(... ~ valtype, value.var="value")  %>%

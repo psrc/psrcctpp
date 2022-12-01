@@ -2,6 +2,7 @@
 
 export(ctpp_shares)
 export(ctpp_tblsearch)
+export(ctpp_varsearch)
 export(get_psrc_ctpp)
 export(psrc_ctpp_sum)
 import(data.table)
