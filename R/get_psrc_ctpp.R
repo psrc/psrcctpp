@@ -41,7 +41,7 @@ api_gofer <- function(url){
 ctpp_tblsearch <- function(prefix, regex, year=2016) {
   description <- universe <- name <- NULL # Declare for documentation purposes
   if(grepl("[AB\\?][123\\?]", prefix) & !is_empty(regex)){
-  url <- paste0("https://ctpp.macrosysrt.com/api/groups?year=", year)
+  url <- paste0("https://ctppdata.transportation.dev/api/groups?year=", year)
   result <- api_gofer(url) %>% setDT() %>%
     .[grepl(prefix, str_sub(name, 1L, 2L)) & grepl(regex, description, ignore.case=TRUE)]
   return(result)
@@ -58,7 +58,7 @@ ctpp_tblsearch <- function(prefix, regex, year=2016) {
 #' @export
 ctpp_varsearch <- function(table_code, year=2016){
   group <- name <- NULL # Declare for documentation purposes
-  url <- paste0("https://ctpp.macrosysrt.com/api/groups/", table_code, "/variables?year=", year)
+  url <- paste0("https://ctppdata.transportation.dev/api/groups/", table_code, "/variables?year=", year)
   result <- api_gofer(url) %>% setDT() %>% .[group==table_code & grepl("_e", name)] %>%
     .[,group:=NULL]
   return(result)
@@ -195,14 +195,14 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids){
   }
 
   # Retrieve labels
-  labels_url <- paste0("https://ctpp.macrosysrt.com/api/groups/",
+  labels_url <- paste0("https://ctppdata.transportation.dev/api/groups/",
                        tbl, "/variables?year=",dyear)
   labels <- api_gofer(labels_url) %>% setDT() %>%
     .[grepl((tbl), name, ignore.case=TRUE),.(name, label)] %>%
     .[, name:=tolower(name)] %>% unique()
 
   # Get data
-  data_url <- paste0("https://ctpp.macrosysrt.com/api/data/",
+  data_url <- paste0("https://ctppdata.transportation.dev/api/data/",
                      dyear, get_arg, scale_arg, geo_arg,"&format=list")
   dt <- api_gofer(data_url) %>% setDT()
   melt_vars <- grep("^geoid$|name$", colnames(dt), value=TRUE)
@@ -293,7 +293,7 @@ psrc_ctpp_stat <- function(df, group_vars, stat_type="sum", incl_na=FALSE){
   }
   if(stat_type=="sum"){
     rs <- suppressMessages(summarize(df, sum_estimate=sum(estimate, na.rm=TRUE),
-            sum_moe=tidycensus::moe_sum(estimate_moe, estimate)) %>% ungroup()) %>%
+            sum_moe=moe_sum(estimate_moe, estimate)) %>% ungroup()) %>%
       rename(estimate=sum_estimate, estimate_moe=sum_moe)
   }
   if(all(group_vars!="keep_existing")){df %<>% ungroup()}
@@ -330,8 +330,8 @@ psrc_ctpp_sum <- function(df, group_vars=NULL, incl_na=TRUE){
 #' @export
 ctpp_shares <- function(df){
   category <- estimate <- estimate_moe <- total <- total_moe <- totals <- NULL
-  if(is_empty(df$category=="Total")){return(df)}else{
-    totals <- filter(df, category=="Total") %>% select_if(!grepl("^table_id$|^line_id$|^category$", colnames(.))) %>%
+  if(is_empty(grepl("^Total",df$category))){return(df)}else{
+    totals <- filter(df, grepl("^Total", category)) %>% select_if(!grepl("^table_id$|^line_id$|^category$", colnames(.))) %>%
       rename_with(~str_replace(., "estimate", "total"), grep("^estimate$|^estimate_moe$", colnames(.), value=TRUE))
     rs <- suppressMessages(inner_join(df, totals, na_matches="never") %>%
       mutate(share=estimate/total,
