@@ -72,8 +72,8 @@ ctpp_varsearch <- function(table_code, year=2016){
 #' @return correspondence table
 #'
 scale_code_lookup <- function(scale, table_code){
-scale_label <- table_type <- NULL # Declare for documentation purposes
-scale_refs <- data.frame(
+  scale_label <- table_type <- NULL # Declare for documentation purposes
+  scale_refs <- data.frame(
   scale_id   =c(2:3,5,11,22:23,25,31,42:43,45,50:51,54),
   table_type =c(rep(1,4),rep(2,4),rep(3,6)),
   scale_label=c(rep(c("state","county","place","tract"),2),
@@ -209,7 +209,7 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids){
   dt %<>% melt(id.vars=melt_vars, variable.factor=FALSE) %>%
     .[, `:=`(valtype=str_sub(str_extract(variable,"_(e|m)\\d+$"),2L,2L),
              value=str2num(value), table_id=str_sub(variable, 1L, 7L),
-             variable=tolower(variable),
+             variable_id=tolower(variable),
              geoid=str_replace(geoid,"[ABC]\\d+US",""))] %>%
     .[labels, variable:=label, on=.(variable=name)] %>%
     dcast(... ~ valtype, value.var="value")  %>%
