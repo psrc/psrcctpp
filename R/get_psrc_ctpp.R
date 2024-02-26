@@ -209,7 +209,7 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids){
   dt %<>% melt(id.vars=melt_vars, variable.factor=FALSE) %>%
     .[, `:=`(valtype=str_sub(str_extract(variable,"_(e|m)\\d+$"),2L,2L),
              value=str2num(value), table_id=str_sub(variable, 1L, 7L),
-             variable_id=tolower(variable),
+             variable_id=tolower(str_replace(variable,"_m","_e")),
              geoid=str_replace(geoid,"[ABC]\\d+US",""))] %>%
     .[labels, variable:=label, on=.(variable=name)] %>%
     dcast(... ~ valtype, value.var="value")  %>%
