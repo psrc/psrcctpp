@@ -5,57 +5,51 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="description" content="Learn to retrieve and summarize CTPP data
-">
 <title>psrcctpp basics • psrcctpp</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="psrcctpp basics">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="psrcctpp basics">
+<meta name="description" content="Learn to retrieve and summarize CTPP data
+">
 <meta property="og:description" content="Learn to retrieve and summarize CTPP data
 ">
-<!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
-<script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-<![endif]-->
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
-    
 
-    <nav class="navbar fixed-top navbar-light navbar-expand-lg bg-light"><div class="container">
-    
+
+    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+
     <a class="navbar-brand me-2" href="../index.html">psrcctpp</a>
 
     <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
-    
+
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item">
-  <a class="nav-link" href="../reference/index.html">Reference</a>
-</li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
-  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
-  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
-    <a class="dropdown-item" href="../articles/psrcctpp_basics.html">psrcctpp basics</a>
-    <a class="dropdown-item" href="../articles/tips_and_tricks.html">psrcctpp tips &amp; tricks</a>
-  </div>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="../articles/psrcctpp_basics.html">psrcctpp basics</a></li>
+    <li><a class="dropdown-item" href="../articles/tips_and_tricks.html">psrcctpp tips &amp; tricks</a></li>
+  </ul>
 </li>
       </ul>
-<form class="form-inline my-2 my-lg-0" role="search">
-        <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="../search.json" id="search-input" placeholder="Search for" autocomplete="off">
-</form>
-
-      <ul class="navbar-nav"></ul>
+<ul class="navbar-nav">
+<li class="nav-item"><form class="form-inline" role="search">
+ <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
+</form></li>
+      </ul>
 </div>
 
-    
+
   </div>
 </nav><div class="container template-article">
 
@@ -64,10 +58,11 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="" class="logo" alt=""><h1>psrcctpp basics</h1>
+
+      <h1>psrcctpp basics</h1>
             
       
-      
+
       <div class="d-none name"><code>psrcctpp_basics.Rmd</code></div>
     </div>
 
@@ -127,17 +122,16 @@ mode, aka “means of transportation” in Census parlance.</p>
 <span><span class="fu">shhh</span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">shhh</span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://stringr.tidyverse.org" class="external-link">stringr</a></span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/ctpp_tblsearch.html">ctpp_tblsearch</a></span><span class="op">(</span><span class="st">"?2"</span>, <span class="st">"means of transp."</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>desc<span class="op">=</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html" class="external-link">str_sub</a></span><span class="op">(</span><span class="va">description</span>, <span class="fl">1L</span>, <span class="fl">50L</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>  <span class="co"># abbreviate to fit in frame</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">desc</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##       name                                               desc</span></span>
-<span><span class="co">##     &lt;char&gt;                                             &lt;char&gt;</span></span>
-<span><span class="co">## 1: A202105                 Workers by means of transportation</span></span>
-<span><span class="co">## 2: B206200   Aggregate travel time by means of transportation</span></span>
-<span><span class="co">## 3: B203208 Median household income by means of transportation</span></span>
-<span><span class="co">## 4: B203207 Workers by household size and by means of transpor</span></span>
-<span><span class="co">## 5: B206202        Mean travel time by means of transportation</span></span>
-<span><span class="co">## 6: B202200 Workers by minority status and by means of transpo</span></span></code></pre>
+<span><span class="fu"><a href="../reference/ctpp_tblsearch.html">ctpp_tblsearch</a></span><span class="op">(</span><span class="st">"?2"</span>, <span class="st">"means of transp."</span>, year<span class="op">=</span><span class="fl">2016</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">description</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##       name                                                     description</span></span>
+<span><span class="co">##     &lt;char&gt;                                                          &lt;char&gt;</span></span>
+<span><span class="co">## 1: A202105                              Workers by means of transportation</span></span>
+<span><span class="co">## 2: B202200      Workers by minority status and by means of transportation </span></span>
+<span><span class="co">## 3: B202202                   Workers by age and by means of transportation</span></span>
+<span><span class="co">## 4: B202213           Workers by travel time and by means of transportation</span></span>
+<span><span class="co">## 5: B202216 Workers by time arriving at work and by means of transportation</span></span>
+<span><span class="co">## 6: B202222       Workers by employment type and by means of transportation</span></span></code></pre>
 <p>In our example, the first table (A202105) is the one we’re after.
 Notice, even if your attribute of interest is listed secondarily, there
 will typically be subtotals by that dimension alone within the
@@ -176,20 +170,19 @@ work_geoid, work_label fields, but the work fields will be
 character rather than factor datatype. Suppressed values in original
 data (“A”) tables are also coded <code>NA</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_psrc_ctpp.html">get_psrc_ctpp</a></span><span class="op">(</span><span class="st">"tract"</span>, <span class="st">"A202105"</span>, <span class="fl">2016</span><span class="op">)</span>          <span class="co"># get data</span></span>
+<code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_psrc_ctpp.html">get_psrc_ctpp</a></span><span class="op">(</span><span class="st">"tract"</span>, <span class="st">"A202105"</span>, <span class="fl">2016</span><span class="op">)</span>            <span class="co"># get data</span></span>
 <span></span>
-<span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="va">x</span>, work_label<span class="op">=</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html" class="external-link">str_sub</a></span><span class="op">(</span><span class="va">work_label</span>, <span class="fl">7L</span>, <span class="fl">14L</span><span class="op">)</span>,    <span class="co"># abbreviate to fit in frame</span></span>
-<span>          category  <span class="op">=</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html" class="external-link">str_sub</a></span><span class="op">(</span><span class="va">category</span>, <span class="fl">1L</span>, <span class="fl">15L</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="va">x</span>, work_label<span class="op">=</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html" class="external-link">str_sub</a></span><span class="op">(</span><span class="va">work_label</span>, <span class="fl">7L</span>, <span class="fl">14L</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>  <span class="co"># fit in frame</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="fl">5</span><span class="op">:</span><span class="fl">8</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span>                   </span></code></pre></div>
-<pre><code><span><span class="co">## Key: &lt;work_label&gt;</span></span>
-<span><span class="co">##    work_label        category estimate estimate_moe</span></span>
-<span><span class="co">##        &lt;char&gt;          &lt;char&gt;    &lt;num&gt;        &lt;num&gt;</span></span>
-<span><span class="co">## 1:    Tract 1         Bicycle       NA           NA</span></span>
-<span><span class="co">## 2:    Tract 1 Bus or trolley       205           96</span></span>
-<span><span class="co">## 3:    Tract 1 Car, truck, or       900          244</span></span>
-<span><span class="co">## 4:    Tract 1 Car, truck, or        70           54</span></span>
-<span><span class="co">## 5:    Tract 1 Car, truck, or        NA           NA</span></span>
-<span><span class="co">## 6:    Tract 1 Car, truck, or        NA           NA</span></span></code></pre>
+<pre><code><span><span class="co">## Key: &lt;work_label, work_geoid, category&gt;</span></span>
+<span><span class="co">##     work_geoid work_label                                    category estimate</span></span>
+<span><span class="co">##         &lt;char&gt;     &lt;char&gt;                                      &lt;char&gt;    &lt;num&gt;</span></span>
+<span><span class="co">## 1: 53033000100    Tract 1                                     Bicycle       NA</span></span>
+<span><span class="co">## 2: 53033000100    Tract 1                          Bus or trolley bus      205</span></span>
+<span><span class="co">## 3: 53033000100    Tract 1           Car, truck, or van -- Drove alone      900</span></span>
+<span><span class="co">## 4: 53033000100    Tract 1 Car, truck, or van -- In a 2-person carpool       70</span></span>
+<span><span class="co">## 5: 53033000100    Tract 1 Car, truck, or van -- In a 3-person carpool       NA</span></span>
+<span><span class="co">## 6: 53033000100    Tract 1 Car, truck, or van -- In a 4-person carpool       NA</span></span></code></pre>
 </div>
 </div>
 <div class="section level2">
@@ -234,28 +227,26 @@ contains category totals (as is typically the case).</p>
 <span><span class="co">## <span style="color: #BCBCBC;">5</span> Downtown Bellevue Other method      235         98.8 0.006<span style="text-decoration: underline;">57</span>   0.002<span style="text-decoration: underline;">75</span></span></span>
 <span><span class="co">## <span style="color: #BCBCBC;">6</span> Downtown Bellevue Taxicab             0         <span style="color: #BB0000;">NA</span>   0        <span style="color: #BB0000;">NA</span></span></span></code></pre>
 </div>
-  </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
 
 
 
     <footer><div class="pkgdown-footer-left">
-  <p></p>
-<p>Developed by Craig Helmann, Suzanne Childress, Christy Lam, Chris Peak, Michael Jensen.</p>
+  <p>Developed by Craig Helmann, Suzanne Childress, Christy Lam, Chris Peak, Michael Jensen.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
     </footer>
 </div>
 
-  
 
-  
+
+
 
   </body>
 </html>
