@@ -4,7 +4,7 @@
 \alias{ctpp_varsearch}
 \title{Search CTPP variable codes}
 \usage{
-ctpp_varsearch(table_code, year = 2016)
+ctpp_varsearch(table_code, year)
 }
 \arguments{
 \item{table_code}{requested data table as string, e.g. "A302103"}

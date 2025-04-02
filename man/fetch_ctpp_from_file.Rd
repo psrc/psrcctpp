@@ -5,7 +5,7 @@
 \title{Fetch ftp-format CTPP data from network location
 Helper to get_psrc_ctpp}
 \usage{
-fetch_ctpp_from_file(scale, table_code, dyear, filepath = "default")
+fetch_ctpp_from_file(scale, table_code, dyear = 2016, filepath = "default")
 }
 \arguments{
 \item{scale}{"county", "place", or "tract" for residence/workplace tables;

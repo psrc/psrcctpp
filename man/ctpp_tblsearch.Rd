@@ -4,7 +4,7 @@
 \alias{ctpp_tblsearch}
 \title{Search CTPP table codes}
 \usage{
-ctpp_tblsearch(prefix, regex, year = 2016)
+ctpp_tblsearch(prefix, regex, year)
 }
 \arguments{
 \item{prefix}{2-character pattern: see \code{vignette("psrcctpp_basics", package = "psrcctpp")}}

@@ -40,9 +40,8 @@ shhh(library(magrittr))
 shhh(library(dplyr))
 shhh(library(stringr))
 
-ctpp_tblsearch("?2", "means of transp.") %>%
-    mutate(desc=str_sub(description, 1L, 50L)) %>%  # abbreviate to fit in frame
-    select(name, desc) %>% head()
+ctpp_tblsearch("?2", "means of transp.", year=2016) %>%
+    select(name, description) %>% head()
 
 ```
 In our example, the first table (A202105) is the one we're after. Notice, even if your attribute of interest is listed secondarily, there will typically be subtotals by that dimension alone within the table.
@@ -62,10 +61,9 @@ By default, the resulting dataframe is restricted to geographies within the Cent
 Notice that all results will include both res_geoid, res_label and work_geoid, work_label fields, but the work fields will be `NA` for residential tables and the residence fields will be `NA` for workplace tables. Categorical fields are left as character rather than factor datatype. Suppressed values in original data ("A") tables are also coded `NA`.
 
 ```{r retrieval, include=TRUE}
-x <- get_psrc_ctpp("tract", "A202105", 2016)          # get data
+x <- get_psrc_ctpp("tract", "A202105", 2016)            # get data
 
-mutate(x, work_label=str_sub(work_label, 7L, 14L),    # abbreviate to fit in frame
-          category  =str_sub(category, 1L, 15L)) %>%
+mutate(x, work_label=str_sub(work_label, 7L, 14L)) %>%  # fit in frame
   select(5:8) %>% head()                   
 
 ```

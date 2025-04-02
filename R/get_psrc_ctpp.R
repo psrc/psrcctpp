@@ -80,14 +80,14 @@ api_gofer <- function(url) {
 #' @importFrom stringr str_sub
 #' @importFrom rlang is_empty
 #' @export
-ctpp_tblsearch <- function(prefix, regex, year=2016) {
+ctpp_tblsearch <- function(prefix, regex, year){
   description <- universe <- name <- NULL # Declare for documentation purposes
-  if(grepl("[AB\\?][123\\?]", prefix) & !is_empty(regex)){
+  if(grepl("[ABC\\?][123\\?]", prefix) & !rlang::is_empty(regex)){
   url <- paste0("https://ctppdata.transportation.dev/api/groups?year=", year)
   result <- api_gofer(url) %>% setDT() %>%
     .[grepl(prefix, str_sub(name, 1L, 2L)) & grepl(regex, description, ignore.case=TRUE)]
   return(result)
-  }else{message("Parameters must be strings; prefix is length 2, i.e. A or")}
+  }else{message("Review your parameters; prefix is length 2, a letter (ABC) then a number (123)")}
 }
 
 #' Search CTPP variable codes
@@ -98,7 +98,7 @@ ctpp_tblsearch <- function(prefix, regex, year=2016) {
 #'
 #' @import data.table
 #' @export
-ctpp_varsearch <- function(table_code, year=2016){
+ctpp_varsearch <- function(table_code, year){
   group <- name <- NULL # Declare for documentation purposes
   url <- paste0("https://ctppdata.transportation.dev/api/groups/", table_code, "/variables?year=", year)
   result <- api_gofer(url) %>% setDT() %>% .[group==table_code & grepl("_e", name)] %>%
@@ -138,14 +138,14 @@ return(scale_refs)
 #' @importFrom stringr str_sub str_extract str_replace
 #' @importFrom dplyr if_else
 #' @import data.table
-fetch_ctpp_from_file <- function(scale, table_code, dyear, filepath="default"){
+fetch_ctpp_from_file <- function(scale, table_code, dyear=2016, filepath="default"){
   scale_filter <- scale_label <- dir <- targetfile <- geoid <- ldesc <- name <- NULL  # Declare for documentation purposes
   #rgeo <- wgeo <- geo_lookup <- GEOID <- LDESC <- NULL
   res_geoid <- work_geoid <- res_label <- work_label <- table_type <- category <- NULL
   # Create geography prefix lookup per scale
   scale_ref <- scale_code_lookup(scale, table_code)
   # Value & geography lookup table ETL
-  dir <- if_else(dyear==2010,"2006_2010/","2012_2016/") %>%
+  dir <- case_when(dyear==2010 ~"2006_2010/", dyear==2016 ~"2012_2016/", dyear==2021 ~"2017_2021/") %>%
     paste0(if_else(filepath!="default", filepath, "X:/DSA/Census/CTPP/"), .)
   val_lookup <- paste0(dir,"acs_ctpp_2012thru2016_table_shell.txt") %>% fread(showProgress=FALSE) %>%
     setnames(tolower(colnames(.))) %>% setnames("tblid", "table_id") %>% setkeyv(c("table_id","lineno"))
@@ -420,6 +420,9 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids) {
 #' @return data table
 #'
 #' @import data.table
+#' @importFrom sf st_drop_geometry
+#' @importFrom psrccensus get_psrc_places
+#' @importFrom rlang is_empty
 #' @export
 get_psrc_ctpp <- function(scale, table_code, dyear = 2016, geoids = NULL, filepath = NULL) {
   # Declare variables (to avoid package warnings)
@@ -442,8 +445,8 @@ get_psrc_ctpp <- function(scale, table_code, dyear = 2016, geoids = NULL, filepa
     stop("'table_code' must be a character string", call. = FALSE)
   }
 
-  if (!all(grepl("^[AB][123]\\d{5}(_(e|m)\\d+)?$", table_code))) {
-    stop("Invalid 'table_code' format. Should match pattern 'A1XXXXX' or 'B2XXXXX'", call. = FALSE)
+  if (!all(grepl("^[ABC][123]\\d{5}(_(e|m)\\d{1,2})?$", table_code))) {
+    stop("'table_code' format should match pattern 'B1XXXXX'", call. = FALSE)
   }
 
   if (!is.numeric(dyear) || dyear < 2000 || dyear > 2030) {

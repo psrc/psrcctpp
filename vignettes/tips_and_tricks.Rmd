@@ -25,7 +25,7 @@ shhh(library(magrittr))
 shhh(library(dplyr))
 shhh(library(stringr))
 
-ctpp_varsearch("A101101") %>% head()
+ctpp_varsearch("A101101", year=2016) %>% head()
 
 x <- get_psrc_ctpp(scale="tract", 
                    table_code=c("A101101_e1","A101101_e2"), # Variable list instead of table
