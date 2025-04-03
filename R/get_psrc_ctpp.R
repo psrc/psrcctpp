@@ -445,8 +445,8 @@ get_psrc_ctpp <- function(scale, table_code, dyear = 2016, geoids = NULL, filepa
     stop("'table_code' must be a character string", call. = FALSE)
   }
 
-  if (!all(grepl("^[ABC][123]\\d{5}(_(e|m)\\d{1,2})?$", table_code))) {
-    stop("'table_code' format should match pattern 'B1XXXXX'", call. = FALSE)
+  if (!all(grepl("^[ABC][0-3]\\d{3,5}\\w{1,2}(_(e|m)\\d+)?$", table_code))) {
+    stop("Invalid 'table_code'", call. = FALSE)
   }
 
   if (!is.numeric(dyear) || dyear < 2000 || dyear > 2030) {
