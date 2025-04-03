@@ -26,7 +26,7 @@ The primary drawback to CTPP data is the approximately 3-year lag to develop it;
 
 In order to request data, as with the ACS, one must know the CTPP table code (or variable codes). To assist in identifying this, the package has a search function, [**`ctpp_tblsearch()`**](https://psrc.github.io/psrcctpp/reference/ctpp_tblsearch.html). It has two required parameters: 
 
-  * **prefix** - CTPP uses a pattern in table names: the first character denotes whether a table is originally reported data ("A"; confidential data is suppressed) or perturbed ("B"; some noise infusion instead of suppression), and the second indicates either residence geography ("1"), workplace geography ("2"), or flows ("3", i.e. both residence and workplace geography). For example, a table for original workplace geography uses the prefix "A2". The function argument can also use a question mark in place of these characters, if you're not particular about one or the other (or either), i.e. "?3" would show all relevant flow tables, regardless of whether they are original or perturbed data.
+  * **prefix** - CTPP uses a pattern in table names: the first character "A" denotes originally reported data (with confidential values suppressed); "B" indicates data with noise infusion instead of suppression ("perturbed"), and "C" data with noise infusion and fewer categories ("condensed" to enable greater statistical reliability). Release of the 2017-21 dataset saw full retirement of "A" tables and introduction of "C" tables. The second character indicates either residence geography ("1"), workplace geography ("2"), or flows ("3", i.e. both residence and workplace geography). For example, a condensed table reported by workplace geography uses the prefix "C2". The **`ctpp_tblsearch()`** function can also take a question mark as wildcard in place of either character, i.e. "?3" would show all relevant flow tables, regardless of whether they are original or perturbed data.
 
   * **"regex"** - This is the regular expression search term to find in the table description. It is not case-sensitive.
   * (optional) **year** - i.e. specify which survey; otherwise defaults to latest (currently 2012-16)
@@ -40,8 +40,9 @@ shhh(library(magrittr))
 shhh(library(dplyr))
 shhh(library(stringr))
 
-ctpp_tblsearch("?2", "means of transp.", year=2016) %>%
-    select(name, description) %>% head()
+ctpp_tblsearch("?2", "means of transp", year=2021) %>%
+  mutate(desc=str_replace(description, "by Means .*", "bmtw")) %>%
+  select(c(name, desc)) %>% head()
 
 ```
 In our example, the first table (A202105) is the one we're after. Notice, even if your attribute of interest is listed secondarily, there will typically be subtotals by that dimension alone within the table.
@@ -61,10 +62,10 @@ By default, the resulting dataframe is restricted to geographies within the Cent
 Notice that all results will include both res_geoid, res_label and work_geoid, work_label fields, but the work fields will be `NA` for residential tables and the residence fields will be `NA` for workplace tables. Categorical fields are left as character rather than factor datatype. Suppressed values in original data ("A") tables are also coded `NA`.
 
 ```{r retrieval, include=TRUE}
-x <- get_psrc_ctpp("tract", "A202105", 2016)            # get data
+x <- get_psrc_ctpp("tract", "B202105", 2021)            # get data
 
-mutate(x, work_label=str_sub(work_label, 7L, 14L)) %>%  # fit in frame
-  select(5:8) %>% head()                   
+mutate(x, tract=str_extract(work_label, "[\\.\\d]+")) %>%  # fit in frame
+  select(10, 7:8) %>% filter(tract=="82") %>% head()                   
 
 ```
 
@@ -82,12 +83,16 @@ x %<>% mutate(
      str_sub(work_geoid,4L,11L) %in% paste0("3302380",3:4)         ~ "Downtown Bellevue",
      str_sub(work_geoid,4L,11L) %in% paste0("61040",c(4,7:8),"00") ~ "Downtown Everett",
      TRUE                                                          ~ NA_character_),
-  category=case_when(
-              grepl(" carpool$",                       category) ~"Carpool",
-              grepl("Drove alone",                     category) ~"Drove Alone",
-              grepl("Streetcar|Bus|Subway|Ferry|Rail", category) ~"Transit",
-              grepl("Bicycle|Walked",                  category) ~"Bike/Ped",
-              !is.na(category) ~category))
+  category=factor(
+    case_when(
+      grepl(" carpool$",                category) ~"Carpool",
+      grepl("Drove alone|Motorcycle",   category) ~"Drove Alone",
+      grepl("Bus|Subway|Ferry|[rR]ail", category) ~"Transit",
+      grepl("Bicycle|Walked",           category) ~"Bike/Ped",
+      grepl("^Total, means",            category) ~"Total",
+      grepl("Other|Taxi",               category) ~"Other",
+      !is.na(category) ~category),
+    levels=c("Bike/Ped","Transit","Carpool","Drove Alone","Other","Total")))
 rs <- psrc_ctpp_sum(x, group_vars="custom_geo", incl_na=FALSE) %>% ctpp_shares()
 head(rs[,2:7])
 

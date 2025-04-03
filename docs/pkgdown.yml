@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   psrcctpp_basics: psrcctpp_basics.html
   tips_and_tricks: tips_and_tricks.html
-last_built: 2025-04-02T23:43Z
+last_built: 2025-04-03T16:47Z
 urls:
   reference: https://psrc.github.io/psrcctpp/reference
   article: https://psrc.github.io/psrcctpp/articles
