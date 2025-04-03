@@ -445,12 +445,20 @@ get_psrc_ctpp <- function(scale, table_code, dyear = 2016, geoids = NULL, filepa
     stop("'table_code' must be a character string", call. = FALSE)
   }
 
+  if (dyear < 2021 & any(grepl("^C", table_code))) {
+    stop("Condensed ('C') tables not available prior to 2017-21 dataset", call. = FALSE)
+  }
+
+  if (dyear > 2016 & any(grepl("^A", table_code))) {
+    stop("Unperturbed ('A') tables discontinued after 2011-16 dataset", call. = FALSE)
+  }
+
   if (!all(grepl("^[ABC][0-3]\\d{3,5}\\w{1,2}(_(e|m)\\d+)?$", table_code))) {
     stop("Invalid 'table_code'", call. = FALSE)
   }
 
-  if (!is.numeric(dyear) || dyear < 2000 || dyear > 2030) {
-    stop("'dyear' must be a valid year (e.g., 2016)", call. = FALSE)
+  if (!is.numeric(dyear) || !dyear %in% c(2010,2016,2021)) {
+    stop("'dyear' must be a valid year: 2010, 2016, or 2021", call. = FALSE)
   }
 
   if (!is.null(geoids) && !is.character(geoids)) {
