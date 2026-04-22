@@ -2,18 +2,20 @@
 % Please edit documentation in R/get_psrc_ctpp.R
 \name{api_gofer}
 \alias{api_gofer}
-\title{Fetch API results
-Helper function sending the API call & parsing its response}
+\title{Fetch API results (with automatic pagination)
+Helper function sending the API call, iterating through all result pages}
 \usage{
-api_gofer(url)
+api_gofer(url, page_size = 1000L)
 }
 \arguments{
-\item{url}{api call}
+\item{url}{api call (query params other than page/size may already be present)}
+
+\item{page_size}{rows per request; larger values reduce round-trips (default 1000)}
 }
 \value{
-data table
+data.table of all result rows across all pages
 }
 \description{
-Fetch API results
-Helper function sending the API call & parsing its response
+Fetch API results (with automatic pagination)
+Helper function sending the API call, iterating through all result pages
 }

@@ -5,68 +5,77 @@ NULL
 globalVariables(c(":=", "!!", ".", "enquos"))
 psrc_counties <- c("033","035","053","061")
 
+# In-session cache for variable labels, keyed by "TABLE_YEAR" (e.g. "B202105_2021").
+# Avoids redundant /groups/{id}/variables API calls within a single R session.
+.ctpp_label_cache <- new.env(parent = emptyenv())
+
 str2num <- function(x){as.numeric(stringr::str_replace_all(x,"(\\+/-)|,|\\*+",""))}
 `%not_in%` <- Negate(`%in%`)
 
-#' Fetch API results
-#' Helper function sending the API call & parsing its response
+#' Fetch API results (with automatic pagination)
+#' Helper function sending the API call, iterating through all result pages
 #'
-#' @param url api call
-#' @return data table
+#' @param url api call (query params other than page/size may already be present)
+#' @param page_size rows per request; larger values reduce round-trips (default 1000)
+#' @return data.table of all result rows across all pages
 #'
-#' @importFrom httr GET http_status http_type add_headers content
-#' @importFrom purrr pluck
-#' @importFrom jsonlite fromJSON
-api_gofer <- function(url) {
-  # Check if API key is set
+#' @importFrom httr2 request req_url_query req_headers req_retry req_error req_perform
+#' @importFrom httr2 resp_status resp_content_type resp_body_json
+#' @import data.table
+api_gofer <- function(url, page_size = 1000L) {
   if (Sys.getenv("CTPP_API_KEY") == "") {
-    stop("CTPP_API_KEY environment variable not set. Use Sys.setenv(CTPP_API_KEY='your_key')", call. = FALSE)
+    stop("CTPP_API_KEY environment variable not set. Use Sys.setenv(CTPP_API_KEY='your_key')",
+         call. = FALSE)
   }
 
-  h <- c("x-api-key" = Sys.getenv("CTPP_API_KEY"), "accept" = "application/json")
+  fetch_page <- function(page) {
+    resp <- request(url) |>
+      req_url_query(size = page_size, page = page) |>
+      req_headers("x-api-key" = Sys.getenv("CTPP_API_KEY"), "Accept" = "application/json") |>
+      req_retry(max_tries = 3L,
+                is_transient = \(r) resp_status(r) %in% c(429L, 500L, 502L, 503L)) |>
+      req_error(is_error = \(r) FALSE) |>   # status checked manually below
+      req_perform()
 
-  # Try-catch for network errors
-  tryCatch({
-    resp <- GET(url, add_headers(.headers = h))
-
-    # Check HTTP status code
-    if (http_status(resp)$category != "Success") {
-      error_msg <- paste("API request failed with status:",
-                         http_status(resp)$message,
-                         "\nURL:", url)
-      stop(error_msg, call. = FALSE)
+    status <- resp_status(resp)
+    if (status >= 400L) {
+      stop(sprintf("API request failed with HTTP %d\nURL: %s", status, url), call. = FALSE)
     }
-
-    # Check content type
-    if (http_type(resp) != "application/json") {
-      stop("API did not return JSON. Received: ", http_type(resp), call. = FALSE)
+    if (!grepl("application/json", resp_content_type(resp), fixed = TRUE)) {
+      stop("API did not return JSON. Received: ", resp_content_type(resp), call. = FALSE)
     }
+    resp_body_json(resp, simplifyVector = TRUE)
+  }
 
-    # Parse response
-    result <- tryCatch({
-      content <- content(resp, "text", encoding = "UTF-8")
-      if (content == "" || is.null(content)) {
-        stop("Empty response from API", call. = FALSE)
-      }
-      parsed <- fromJSON(content, simplifyDataFrame = TRUE)
-      if (is.null(parsed$data)) {
-        stop("API response missing 'data' field", call. = FALSE)
-      }
-      parsed %>% purrr::pluck("data")
-    }, error = function(e) {
-      stop("Failed to parse API response: ", e$message, call. = FALSE)
-    })
-
-    return(result)
-  }, error = function(e) {
-    if (grepl("Could not resolve host", e$message)) {
+  # Fetch first page; translate low-level network errors to friendlier messages
+  first <- tryCatch(fetch_page(1L), error = function(e) {
+    msg <- conditionMessage(e)
+    if (grepl("Could not resolve host|Name or service not known", msg)) {
       stop("Network connection error: Unable to reach API server", call. = FALSE)
-    } else if (grepl("Timeout", e$message)) {
+    } else if (grepl("[Tt]imeout", msg)) {
       stop("Request timed out. The API server may be overloaded", call. = FALSE)
-    } else {
-      stop("API request failed: ", e$message, call. = FALSE)
     }
+    stop("API request failed: ", msg, call. = FALSE)
   })
+
+  if (is.null(first[["data"]])) {
+    stop("API response missing 'data' field", call. = FALSE)
+  }
+
+  total   <- if (!is.null(first[["total"]])) first[["total"]] else length(first[["data"]])
+  n_pages <- max(1L, ceiling(total / page_size))
+  pages   <- vector("list", n_pages)
+  pages[[1L]] <- first[["data"]]
+
+  # Collect any remaining pages
+  if (n_pages > 1L) {
+    for (p in seq(2L, n_pages)) {
+      pg         <- fetch_page(p)
+      pages[[p]] <- pg[["data"]]
+    }
+  }
+
+  rbindlist(pages, fill = TRUE)
 }
 
 #' Search CTPP table codes
@@ -83,7 +92,15 @@ api_gofer <- function(url) {
 ctpp_tblsearch <- function(prefix, regex, year){
   description <- universe <- name <- NULL # Declare for documentation purposes
   if(grepl("[ABC\\?][123\\?]", prefix) & !rlang::is_empty(regex)){
-  url <- paste0("https://ctppdata.transportation.dev/api/groups?year=", year)
+  # Strip regex metacharacters to form a clean keyword for server-side pre-filtering.
+  # Client-side grepl() below still enforces the full regex precisely.
+  keyword <- gsub("[\\^\\$\\*\\+\\?\\|\\[\\]\\(\\)\\{\\}\\\\]", "", regex, perl = TRUE)
+  url <- if (nchar(keyword) > 2L) {
+    paste0("https://ctppdata.transportation.dev/api/groups?year=", year,
+           "&keyword=", utils::URLencode(keyword, reserved = TRUE))
+  } else {
+    paste0("https://ctppdata.transportation.dev/api/groups?year=", year)
+  }
   result <- api_gofer(url) %>% setDT() %>%
     .[grepl(prefix, str_sub(name, 1L, 2L)) & grepl(regex, description, ignore.case=TRUE)]
   return(result)
@@ -147,7 +164,10 @@ fetch_ctpp_from_file <- function(scale, table_code, dyear=2016, filepath="defaul
   # Value & geography lookup table ETL
   dir <- case_when(dyear==2010 ~"2006_2010/", dyear==2016 ~"2012_2016/", dyear==2021 ~"2017_2021/") %>%
     paste0(if_else(filepath!="default", filepath, "X:/DSA/Census/CTPP/"), .)
-  val_lookup <- paste0(dir,"acs_ctpp_2012thru2016_table_shell.txt") %>% fread(showProgress=FALSE) %>%
+  span_label <- case_when(dyear == 2010 ~ "2006thru2010",
+                          dyear == 2016 ~ "2012thru2016",
+                          dyear == 2021 ~ "2017thru2021")
+  val_lookup <- paste0(dir, "acs_ctpp_", span_label, "_table_shell.txt") %>% fread(showProgress=FALSE) %>%
     setnames(tolower(colnames(.))) %>% setnames("tblid", "table_id") %>% setkeyv(c("table_id","lineno"))
 
   # Steps for ftp files already saved to network file
@@ -158,7 +178,7 @@ fetch_ctpp_from_file <- function(scale, table_code, dyear=2016, filepath="defaul
   #   .[grepl(scale_filter, GEOID)] %>% .[, GEOID:=str_replace(geoid, "^C\\w+US", "")]
   # geo_lookup <- rbind(rgeo, wgeo) %>% unique() %>% setnames(tolower(colnames(.))) %>% setkeyv(c("geoid"))
   # rm(rgeo, wgeo)
-  geo_lookup <- paste0(dir,"acs_ctpp_2012thru2016_all_geo.txt") %>%
+  geo_lookup <- paste0(dir, "acs_ctpp_", span_label, "_all_geo.txt") %>%
     fread(colClasses=rep("character",2),showProgress=FALSE) %>%
     setnames(tolower(colnames(.))) %>% setkeyv(c("geoid"))
 
@@ -196,7 +216,7 @@ fetch_ctpp_from_file <- function(scale, table_code, dyear=2016, filepath="defaul
 #' @importFrom dplyr case_when
 #' @import data.table
 fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids) {
-  name <- label <- valtype <- variable <- value <- geoid <- NULL
+  name <- label <- valtype <- variable <- value <- geoid <- work_label <- NULL
 
   tryCatch({
     # Validate scale and table code compatibility
@@ -279,24 +299,27 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids) {
       geo_arg <- paste0("&in=", geo_scale, "%3A", paste0(geoids, collapse = "%2C"))
     }
 
-    # Retrieve labels
+    # Retrieve labels — cached per (table, year) to avoid redundant API round-trips
     labels_url <- paste0("https://ctppdata.transportation.dev/api/groups/",
                          tbl, "/variables?year=", dyear)
+    cache_key  <- paste0(tbl, "_", dyear)
 
-    labels <- tryCatch({
-      result <- api_gofer(labels_url)
+    labels <- if (exists(cache_key, envir = .ctpp_label_cache, inherits = FALSE)) {
+      .ctpp_label_cache[[cache_key]]
+    } else {
+      result <- tryCatch(
+        api_gofer(labels_url),
+        error = function(e) stop("Failed to fetch variable labels: ", e$message,
+                                 "\nURL: ", labels_url, call. = FALSE)
+      )
       if (is.null(result) || nrow(result) == 0) {
         stop("No variable labels found for table ", tbl, " and year ", dyear, call. = FALSE)
       }
-      result
-    }, error = function(e) {
-      stop("Failed to fetch variable labels: ", e$message,
-           "\nURL: ", labels_url, call. = FALSE)
-    }) %>%
-      setDT() %>%
-      .[grepl((tbl), name, ignore.case = TRUE), .(name, label)] %>%
-      .[, name := tolower(name)] %>%
-      unique()
+      lbl <- setDT(result)[grepl(tbl, name, ignore.case = TRUE), .(name, label)] %>%
+        .[, name := tolower(name)] %>% unique()
+      .ctpp_label_cache[[cache_key]] <- lbl
+      lbl
+    }
 
     if (nrow(labels) == 0) {
       stop("No matching variables found for table ", tbl, call. = FALSE)
@@ -388,13 +411,16 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids) {
         )] %>%
           .[, geoid := NULL]
 
-        # Handle different column names for flow tables
+        # Handle flow table geography labels: API may return origin_name/destination_name,
+        # a single name column, or neither — handle all three cases gracefully.
         if ("origin_name" %in% names(dt) && "destination_name" %in% names(dt)) {
-          dt %<>% setnames(c("origin_name", "destination_name"),
-                           c("res_label", "work_label"))
+          dt %<>% setnames(c("origin_name", "destination_name"), c("res_label", "work_label"))
+        } else if ("name" %in% names(dt)) {
+          # Fallback: single name column assumed to be origin
+          setnames(dt, "name", "res_label")
+          dt[, work_label := NA_character_]
         } else {
-          warning("Expected columns 'origin_name' and 'destination_name' not found in flow table",
-                  call. = FALSE)
+          dt[, c("res_label", "work_label") := NA_character_]
         }
       }
 
