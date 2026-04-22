@@ -1,0 +1,62 @@
+# psrcctpp
+
+Tools to utilize Census Transportation Planning Package (CTPP) data for
+geographies in the Central Puget Sound Region.
+
+Install with the following command:
+`devtools::install_github("psrc/psrcctpp")`
+
+If you are having problems installing the package, make sure you have
+all the latest dependency packages. You may be prompted to install some
+dependency packages after that; you can install all by selecting option
+1, “Install all”.
+
+This package requires a valid CTPP API key; to obtain one, visit
+`https://ctppdata.transportation.dev/ -> Login -> Create an account`.
+Once successfully logged in the options associated with your account (at
+top right of screen, hover username) include “Manage API Keys”. Create a
+key there, then make an .renviron entry named `CTPP_API_KEY` with this
+value, in single quotes (the command
+[`usethis::edit_r_environ()`](https://usethis.r-lib.org/reference/edit.html)
+conveniently locates and opens the file for you).
+
+# Package index
+
+## All functions
+
+- [`api_gofer()`](https://psrc.github.io/psrcctpp/reference/api_gofer.md)
+  : Fetch API results (with automatic pagination) Helper function
+  sending the API call, iterating through all result pages
+- [`ctpp_shares()`](https://psrc.github.io/psrcctpp/reference/ctpp_shares.md)
+  : Add shares to CTPP table
+- [`psrc_ctpp_sum()`](https://psrc.github.io/psrcctpp/reference/ctpp_stat.md)
+  : CTPP summary statistics
+- [`ctpp_tblsearch()`](https://psrc.github.io/psrcctpp/reference/ctpp_tblsearch.md)
+  : Search CTPP table codes
+- [`ctpp_varsearch()`](https://psrc.github.io/psrcctpp/reference/ctpp_varsearch.md)
+  : Search CTPP variable codes
+- [`fetch_ctpp_from_api()`](https://psrc.github.io/psrcctpp/reference/fetch_ctpp_from_api.md)
+  : Fetch CTPP data from AASHTO api Helper to get_psrc_ctpp
+- [`fetch_ctpp_from_file()`](https://psrc.github.io/psrcctpp/reference/fetch_ctpp_from_file.md)
+  : Fetch ftp-format CTPP data from network location Helper to
+  get_psrc_ctpp
+- [`get_psrc_ctpp()`](https://psrc.github.io/psrcctpp/reference/get_psrc_ctpp.md)
+  : Retrieve CTPP data
+- [`psrc_ctpp_stat()`](https://psrc.github.io/psrcctpp/reference/psrc_ctpp_stat.md)
+  : Generic call for CTPP summary statistics
+- [`scale_code_lookup()`](https://psrc.github.io/psrcctpp/reference/scale_code_lookup.md)
+  : Correspondence table for CTPP codes, table type, and scale
+
+# Articles
+
+### All vignettes
+
+- [psrcctpp
+  basics](https://psrc.github.io/psrcctpp/articles/psrcctpp_basics.md):
+
+  Learn to retrieve and summarize CTPP data
+
+- [psrcctpp tips &
+  tricks](https://psrc.github.io/psrcctpp/articles/tips_and_tricks.md):
+
+  Additional options for power users

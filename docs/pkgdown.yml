@@ -1,10 +1,10 @@
-pandoc: '3.2'
-pkgdown: 2.1.1
+pandoc: 3.8.3
+pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   psrcctpp_basics: psrcctpp_basics.html
   tips_and_tricks: tips_and_tricks.html
-last_built: 2025-04-03T16:47Z
+last_built: 2026-04-22T23:12Z
 urls:
   reference: https://psrc.github.io/psrcctpp/reference
   article: https://psrc.github.io/psrcctpp/articles

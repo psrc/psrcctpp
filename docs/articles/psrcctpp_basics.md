@@ -1,0 +1,177 @@
+# psrcctpp basics
+
+## Why CTPP data?
+
+Although it is derived from the American Community Survey (ACS), CTPP
+includes data items that are not published in the ACS release, and at
+scales substantially smaller than ACS Public Use Microdata (PUMS). As
+with other ACS products, it is consistent across scales, supports
+longitudinal analysis, and includes margins of error. It is the most
+authoritative nationwide, Census Bureau source for transportation flow
+data in particular.
+
+The primary drawback to CTPP data is the approximately 3-year lag to
+develop it; since it’s restricted to non-overlapping 5-year spans, it
+may involve a remove of nearly seven years from the conclusion of the
+first year in a reported span. Issues such as the transportation impacts
+accompanying the 2020 Covid pandemic have a long signature in the data
+(i.e. the next data without it would arrive around 2029).
+
+## Identify and retrieve CTPP data
+
+### Determine which table to request
+
+In order to request data, as with the ACS, one must know the CTPP table
+code (or variable codes). To assist in identifying this, the package has
+a search function,
+[**`ctpp_tblsearch()`**](https://psrc.github.io/psrcctpp/reference/ctpp_tblsearch.html).
+It has two required parameters:
+
+- **prefix** - CTPP uses a pattern in table names: the first character
+  “A” denotes originally reported data (with confidential values
+  suppressed); “B” indicates data with noise infusion instead of
+  suppression (“perturbed”), and “C” data with noise infusion and fewer
+  categories (“condensed” to enable greater statistical reliability).
+  Release of the 2017-21 dataset saw full retirement of “A” tables and
+  introduction of “C” tables. The second character indicates either
+  residence geography (“1”), workplace geography (“2”), or flows (“3”,
+  i.e. both residence and workplace geography). For example, a condensed
+  table reported by workplace geography uses the prefix “C2”. The
+  **[`ctpp_tblsearch()`](https://psrc.github.io/psrcctpp/reference/ctpp_tblsearch.md)**
+  function can also take a question mark as wildcard in place of either
+  character, i.e. “?3” would show all relevant flow tables, regardless
+  of whether they are original or perturbed data.
+
+- **“regex”** - This is the regular expression search term to find in
+  the table description. It is not case-sensitive.
+
+- (optional) **year** - i.e. specify which survey; otherwise defaults to
+  latest (currently 2012-16)
+
+In our example, we’re looking for a workplace-geography table showing
+mode, aka “means of transportation” in Census parlance.
+
+``` r
+
+shhh <- suppressPackageStartupMessages
+shhh(library(psrcctpp))
+shhh(library(magrittr))
+shhh(library(dplyr))
+shhh(library(stringr))
+
+ctpp_tblsearch("?2", "means of transp", year=2021) %>%
+  mutate(desc=str_replace(description, "by Means .*", "bmtw")) %>%
+  select(c(name, desc)) %>% head()
+```
+
+    ##       name                                        desc
+    ##     <char>                                      <char>
+    ## 1: B202105        Means of Transportation to Work (18)
+    ## 2: B202200 Race and Hispanic or Latino Origin (3) bmtw
+    ## 3: B202202                      Age of Worker (8) bmtw
+    ## 4: B202213               Travel Time to Work (15) bmtw
+    ## 5: B202216             Time Arriving At Work (17) bmtw
+    ## 6: B202222                   Class of Worker (10) bmtw
+
+In our example, the first table (A202105) is the one we’re after.
+Notice, even if your attribute of interest is listed secondarily, there
+will typically be subtotals by that dimension alone within the table.
+
+### Get the data
+
+Once we’ve identified the table code, we can now use the
+[**`get_psrc_ctpp()`**](https://psrc.github.io/psrcctpp/reference/get_psrc_ctpp.html)
+function to retrieve the data. Its parameters are:
+
+- **scale** - for residence or workplace tables, either “county”,
+  “place”, or “tract”  
+  for flow tables, either “county-county”, “place-place”,
+  “place-county”, “county-place”, or “tract-tract”  
+  “block group” scale will be available starting with the 2017-21
+  survey.  
+- **table_code** - identifier (string) for the table you want (you can
+  also request individual variables)
+- **dyear** - aka data year, the last year of the CTPP span (i.e. 2016
+  for 2012-16)
+
+By default, the resulting dataframe is restricted to geographies within
+the Central Puget Sound region (or flows with one end within the
+region). To specify a narrower set–or geographies outside the region–you
+can provide a character vector using the optional **geoids** argument
+containing the desired FIPS codes.
+
+Notice that all results will include both res_geoid, res_label and
+work_geoid, work_label fields, but the work fields will be `NA` for
+residential tables and the residence fields will be `NA` for workplace
+tables. Categorical fields are left as character rather than factor
+datatype. Suppressed values in original data (“A”) tables are also coded
+`NA`.
+
+``` r
+
+x <- get_psrc_ctpp("tract", "B202105", 2021)            # get data
+
+mutate(x, tract=str_extract(work_label, "[\\.\\d]+")) %>%  # fit in frame
+  select(10, 7:8) %>% filter(tract=="82") %>% head()                   
+```
+
+    ##     tract                                    category estimate
+    ##    <char>                                      <char>    <num>
+    ## 1:     82                                    Bicycle       350
+    ## 2:     82                                         Bus     7720
+    ## 3:     82           Car, truck, or van -- Drove alone     8120
+    ## 4:     82 Car, truck, or van -- In a 2-person carpool     1165
+    ## 5:     82 Car, truck, or van -- In a 3-person carpool      120
+    ## 6:     82 Car, truck, or van -- In a 4-person carpool       60
+
+## Aggregate CTPP data using custom variables
+
+CTPP data tables include totals as well as category breakdowns, but if
+you wish to define either a custom category or a custom geography (as an
+aggregate of a smaller geography, e.g. tract or block group), you can
+create your own grouping variable, and then summarize using that
+variable in the
+[**`psrc_ctpp_sum()`**](https://psrc.github.io/psrcctpp/reference/ctpp_stat.html)
+function, as follows.
+
+**[`psrc_ctpp_sum()`](https://psrc.github.io/psrcctpp/reference/ctpp_stat.md)**
+results include both estimates and corresponding margins of error. The
+**`incl_na=FALSE`** option can be used to remove irrelevant categories
+without having to create a separate filtered data object first (`NA`
+values for relevant categories are still preserved).
+
+You can utilize the convenience function
+[**`ctpp_shares()`**](https://psrc.github.io/psrcctpp/reference/ctpp_shares.html)
+to append the share and share MOE to any CTPP dataset as long as it
+contains category totals (as is typically the case).
+
+``` r
+
+x %<>% mutate(
+  custom_geo=case_when(
+     str_sub(work_geoid,4L,11L) %in% paste0("3302380",3:4)         ~ "Downtown Bellevue",
+     str_sub(work_geoid,4L,11L) %in% paste0("61040",c(4,7:8),"00") ~ "Downtown Everett",
+     TRUE                                                          ~ NA_character_),
+  category=factor(
+    case_when(
+      grepl(" carpool$",                category) ~"Carpool",
+      grepl("Drove alone|Motorcycle",   category) ~"Drove Alone",
+      grepl("Bus|Subway|Ferry|[rR]ail", category) ~"Transit",
+      grepl("Bicycle|Walked",           category) ~"Bike/Ped",
+      grepl("^Total, means",            category) ~"Total",
+      grepl("Other|Taxi",               category) ~"Other",
+      !is.na(category) ~category),
+    levels=c("Bike/Ped","Transit","Carpool","Drove Alone","Other","Total")))
+rs <- psrc_ctpp_sum(x, group_vars="custom_geo", incl_na=FALSE) %>% ctpp_shares()
+head(rs[,2:7])
+```
+
+    ## # A tibble: 6 × 6
+    ##   custom_geo       category    estimate estimate_moe   share share_moe
+    ##   <chr>            <fct>          <dbl>        <dbl>   <dbl>     <dbl>
+    ## 1 Downtown Everett Bike/Ped         760        287.  0.0479    0.0179 
+    ## 2 Downtown Everett Transit          310        146.  0.0196    0.00915
+    ## 3 Downtown Everett Carpool         1295        295.  0.0817    0.0179 
+    ## 4 Downtown Everett Drove Alone    12630        865.  0.797     0.0240 
+    ## 5 Downtown Everett Other             59         48.2 0.00372   0.00303
+    ## 6 Downtown Everett Total          15855        976.  1         0.0870
