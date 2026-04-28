@@ -29,12 +29,12 @@ api_gofer <- function(url, page_size = 1000L) {
   }
 
   fetch_page <- function(page) {
-    resp <- request(url) |>
-      req_url_query(size = page_size, page = page) |>
-      req_headers("x-api-key" = Sys.getenv("CTPP_API_KEY"), "Accept" = "application/json") |>
+    resp <- request(url) %>%
+      req_url_query(size = page_size, page = page) %>%
+      req_headers("x-api-key" = Sys.getenv("CTPP_API_KEY"), "Accept" = "application/json") %>%
       req_retry(max_tries = 3L,
-                is_transient = \(r) resp_status(r) %in% c(429L, 500L, 502L, 503L)) |>
-      req_error(is_error = \(r) FALSE) |>   # status checked manually below
+                is_transient = \(r) resp_status(r) %in% c(429L, 500L, 502L, 503L)) %>%
+      req_error(is_error = \(r) FALSE) %>%   # status checked manually below
       req_perform()
 
     status <- resp_status(resp)
