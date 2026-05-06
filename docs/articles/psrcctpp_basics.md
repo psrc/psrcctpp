@@ -182,14 +182,6 @@ x %<>% mutate(
       !is.na(category) ~category),
     levels=c("Bike/Ped","Transit","Carpool","Drove Alone","Other","Total")))
 rs <- psrc_ctpp_sum(x, group_vars="custom_geo", incl_na=FALSE) %>% ctpp_shares()
-```
-
-    ## Warning: psrc_ctpp_stat(): 2 grouped result(s) contain multiple category values
-    ## beginning with 'Total'. Preserve exactly one total row per group before
-    ## summarizing or computing shares.
-
-``` r
-
 head(rs[,2:7])
 ```
 
