@@ -19,6 +19,15 @@ test_that("psrc_ctpp_sum warns when grouped categories lose an identifiable tota
   )
 })
 
+test_that("psrc_ctpp_stat warns when a full sum collapses totals with components", {
+  df <- sample_ctpp_table()
+
+  expect_warning(
+    psrc_ctpp_sum(df, group_vars = NULL),
+    "will sum a 'Total' row together with component rows"
+  )
+})
+
 test_that("psrc_ctpp_median returns grouped medians and NA MOE", {
   df <- rbind(
     sample_ctpp_table(),

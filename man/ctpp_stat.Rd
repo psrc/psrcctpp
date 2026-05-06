@@ -6,9 +6,9 @@
 \alias{psrc_ctpp_median}
 \title{CTPP summary statistics}
 \usage{
-psrc_ctpp_sum(df, group_vars = NULL, incl_na = TRUE)
+psrc_ctpp_sum(df, group_vars = "category", incl_na = TRUE)
 
-psrc_ctpp_median(df, group_vars = NULL, incl_na = TRUE)
+psrc_ctpp_median(df, group_vars = "category", incl_na = TRUE)
 }
 \arguments{
 \item{df}{result of get_psrc_ctpp function or a derived table that still preserves
@@ -25,7 +25,10 @@ Sum summaries return a propagated margin of error. Median summaries preserve the
 standard \code{estimate_moe} column and fill it with \code{NA_real_}, because a
 comparable median MOE is not currently computed. If you recode \code{category},
 preserve exactly one total row per group so downstream helpers such as
-\code{ctpp_shares()} can still identify the denominator.
+\code{ctpp_shares()} can still identify the denominator. Sum summaries with
+\code{group_vars = NULL} warn when the input still contains a \code{"Total"}
+row alongside component rows, because that full collapse will add the total to
+its parts.
 }
 \description{
 CTPP summary statistics

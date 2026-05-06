@@ -76,6 +76,26 @@ psrc_ctpp_warn_total_contract <- function(df, fn_name, group_cols = character())
   invisible(NULL)
 }
 
+psrc_ctpp_warn_total_collapse <- function(df, fn_name, group_cols = "table_id"){
+  if(nrow(df) == 0L || !"category" %in% colnames(df)){
+    return(invisible(NULL))
+  }
+
+  collapsing_groups <- psrc_ctpp_total_summary(df, group_cols)[category_n > 1L & total_n == 1L]
+  if(nrow(collapsing_groups) > 0L){
+    warning(
+      sprintf(
+        "%s(): %d grouped result(s) will sum a 'Total' row together with component rows. This is usually not intended; use group_vars = 'category' to preserve category totals.",
+        fn_name,
+        nrow(collapsing_groups)
+      ),
+      call. = FALSE
+    )
+  }
+
+  invisible(NULL)
+}
+
 #' Generic call for CTPP summary statistics
 #'
 #' Given specific form by related \code{\link{ctpp_stat}} functions.
@@ -104,6 +124,9 @@ psrc_ctpp_stat <- function(df, group_vars, stat_type="sum", incl_na=FALSE){
   if(!keep_existing){df %<>% ungroup()}                                                             # "keep_existing" is power-user option to maintain more complex groupings;
   if(stat_type=="sum"){
     psrc_ctpp_warn_total_contract(df, "psrc_ctpp_stat", unique(c("table_id", group_vars)))
+    if(is.null(group_vars)){
+      psrc_ctpp_warn_total_collapse(df, "psrc_ctpp_stat")
+    }
   }
   if(!is.null(group_vars) && !keep_existing){                                                       # -- otherwise the package ungroups before and afterward
     if(incl_na==FALSE){df %<>% filter(if_all(all_of(group_vars), ~ !is.na(.)))}                    # Allows users to exclude w/o removing observations from the data object itself
@@ -138,13 +161,16 @@ psrc_ctpp_stat <- function(df, group_vars, stat_type="sum", incl_na=FALSE){
 #' standard \code{estimate_moe} column and fill it with \code{NA_real_}, because a
 #' comparable median MOE is not currently computed. If you recode \code{category},
 #' preserve exactly one total row per group so downstream helpers such as
-#' \code{ctpp_shares()} can still identify the denominator.
+#' \code{ctpp_shares()} can still identify the denominator. Sum summaries with
+#' \code{group_vars = NULL} warn when the input still contains a \code{"Total"}
+#' row alongside component rows, because that full collapse will add the total to
+#' its parts.
 NULL
 
 #' @rdname ctpp_stat
 #' @title Generate CTPP sums
 #' @export
-psrc_ctpp_sum <- function(df, group_vars=NULL, incl_na=TRUE){
+psrc_ctpp_sum <- function(df, group_vars="category", incl_na=TRUE){
   rs <- psrc_ctpp_stat(df=df, stat_type="sum", group_vars=group_vars, incl_na=incl_na)
   return(rs)
 }
@@ -152,7 +178,7 @@ psrc_ctpp_sum <- function(df, group_vars=NULL, incl_na=TRUE){
 #' @rdname ctpp_stat
 #' @title Generate CTPP medians
 #' @export
-psrc_ctpp_median <- function(df, group_vars=NULL, incl_na=TRUE){
+psrc_ctpp_median <- function(df, group_vars="category", incl_na=TRUE){
   rs <- psrc_ctpp_stat(df=df, stat_type="median", group_vars=group_vars, incl_na=incl_na)
   return(rs)
 }
