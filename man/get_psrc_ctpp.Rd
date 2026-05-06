@@ -19,7 +19,15 @@ get_psrc_ctpp(scale, table_code, dyear = 2016, geoids = NULL, filepath = NULL)
 \item{filepath}{optional network location of downloaded ftp CTPP files}
 }
 \value{
-data table
+A data table with stable column names used by downstream helpers.
+Standard columns always include \code{table_id}, \code{category},
+\code{estimate}, and \code{estimate_moe}. Geography columns vary by
+table type and may include \code{res_geoid}, \code{res_label},
+\code{work_geoid}, and \code{work_label}. You may add or transform
+columns before passing the result to \code{psrc_ctpp_sum()} or
+\code{ctpp_shares()}, but if you recode \code{category} you should
+preserve a single total row per grouping with a value beginning with
+\code{"Total"}.
 }
 \description{
 Retrieve CTPP data

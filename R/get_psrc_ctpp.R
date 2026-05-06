@@ -443,7 +443,15 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids) {
 #' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
 #' @param geoids optional string vector of GEOID codes to limit the table
 #' @param filepath optional network location of downloaded ftp CTPP files
-#' @return data table
+#' @return A data table with stable column names used by downstream helpers.
+#' Standard columns always include \code{table_id}, \code{category},
+#' \code{estimate}, and \code{estimate_moe}. Geography columns vary by
+#' table type and may include \code{res_geoid}, \code{res_label},
+#' \code{work_geoid}, and \code{work_label}. You may add or transform
+#' columns before passing the result to \code{psrc_ctpp_sum()} or
+#' \code{ctpp_shares()}, but if you recode \code{category} you should
+#' preserve a single total row per grouping with a value beginning with
+#' \code{"Total"}.
 #'
 #' @import data.table
 #' @importFrom sf st_drop_geometry
@@ -547,72 +555,4 @@ get_psrc_ctpp <- function(scale, table_code, dyear = 2016, geoids = NULL, filepa
       stop("Failed to fetch CTPP data: ", e$message, call. = FALSE)
     }
   })
-}
-
-#' Generic call for CTPP summary statistics
-#'
-#' Given specific form by related \code{\link{ctpp_stat}} functions.
-#' @inheritParams ctpp_stat
-#' @param stat_type for now, "sum" is only option
-#'
-#' @importFrom dplyr ungroup group_by filter across summarize if_all rename
-#' @importFrom tidyselect all_of
-#' @importFrom tidycensus moe_sum
-#' @import data.table
-psrc_ctpp_stat <- function(df, group_vars, stat_type="sum", incl_na=FALSE){
-  table_id <- line_id <- category <- estimate <- estimate_moe <- NULL
-  sum_estimate <- sum_moe <- NULL
-  if(all(group_vars!="keep_existing")){df %<>% ungroup()}                                          # "keep_existing" is power-user option to maintain more complex groupings;
-  if(all(!is.null(group_vars) & group_vars!="keep_existing")){                                     # -- otherwise the package ungroups before and afterward
-    if(incl_na==FALSE){df %<>% filter(if_all(all_of(group_vars), ~ !is.na(.)))}                    # Allows users to exclude w/o removing observations from the data object itself
-    df %<>% group_by(across(c(table_id, line_id, all_of(group_vars), category)))
-  }
-  if(stat_type=="sum"){
-    rs <- suppressMessages(summarize(df, sum_estimate=sum(estimate, na.rm=TRUE),
-            sum_moe=moe_sum(estimate_moe, estimate)) %>% ungroup()) %>%
-      rename(estimate=sum_estimate, estimate_moe=sum_moe)
-  }
-  if(all(group_vars!="keep_existing")){df %<>% ungroup()}
-  return(rs)
-}
-
-#' CTPP summary statistics
-#'
-#' @param df result of get_psrc_ctpp function
-#' @param group_vars grouping variables, original or added
-#' @param incl_na whether to include NA lines
-#' @name ctpp_stat
-#' @return A table with the variable names and labels, summary statistic and margin of error
-NULL
-
-#' @rdname ctpp_stat
-#' @title Generate CTPP sums
-#' @export
-psrc_ctpp_sum <- function(df, group_vars=NULL, incl_na=TRUE){
-  rs <- psrc_ctpp_stat(df=df, stat_type="sum", group_vars=group_vars, incl_na=incl_na)
-  return(rs)
-}
-
-#' Add shares to CTPP table
-#'
-#' @param df dataframe, either result of get_psrc_ctpp or psrc_ctpp_stat
-#' @return dataframe with share & share_moe
-#'
-#' @importFrom dplyr filter select select_if rename_with inner_join mutate
-#' @importFrom rlang is_empty
-#' @importFrom stringr str_replace
-#' @importFrom tidycensus moe_prop
-#' @import data.table
-#' @export
-ctpp_shares <- function(df){
-  category <- estimate <- estimate_moe <- total <- total_moe <- totals <- NULL
-  if(is_empty(grepl("^Total",df$category))){return(df)}else{
-    totals <- filter(df, grepl("^Total", category)) %>% select_if(!grepl("^table_id$|^line_id$|^category$", colnames(.))) %>%
-      rename_with(~str_replace(., "estimate", "total"), grep("^estimate$|^estimate_moe$", colnames(.), value=TRUE))
-    rs <- suppressMessages(inner_join(df, totals, na_matches="never") %>%
-      mutate(share=estimate/total,
-             share_moe=moe_prop(estimate, total, estimate_moe, total_moe)) %>%
-      select(-c(total, total_moe)))
-    return(rs)
-  }
 }
