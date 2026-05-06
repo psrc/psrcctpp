@@ -132,6 +132,10 @@ ctpp_varsearch <- function(table_code, year){
 #'
 scale_code_lookup <- function(scale, table_code){
   scale_label <- table_type <- NULL # Declare for documentation purposes
+  table_code <- unique(str_sub(table_code, 1L, 7L))
+  if (length(table_code) != 1) {
+    stop("Requested variables must come from the same table.", call. = FALSE)
+  }
   scale_refs <- data.frame(
   scale_id   =c(2:3,5,11,22:23,25,31,42:43,45,50:51,54),
   table_type =c(rep(1,4),rep(2,4),rep(3,6)),
@@ -159,6 +163,15 @@ fetch_ctpp_from_file <- function(scale, table_code, dyear=2016, filepath="defaul
   scale_filter <- scale_label <- dir <- targetfile <- geoid <- ldesc <- name <- NULL  # Declare for documentation purposes
   #rgeo <- wgeo <- geo_lookup <- GEOID <- LDESC <- NULL
   res_geoid <- work_geoid <- res_label <- work_label <- table_type <- category <- NULL
+  requested_table <- unique(str_sub(table_code, 1L, 7L))
+  if (length(requested_table) != 1) {
+    stop("Requested variables must come from the same table.", call. = FALSE)
+  }
+  requested_lines <- if (any(nchar(table_code) == 7L)) {
+    NULL
+  } else {
+    unique(as.integer(str_extract(table_code, "\\d+$")))
+  }
   # Create geography prefix lookup per scale
   scale_ref <- scale_code_lookup(scale, table_code)
   # Value & geography lookup table ETL
@@ -183,12 +196,16 @@ fetch_ctpp_from_file <- function(scale, table_code, dyear=2016, filepath="defaul
     setnames(tolower(colnames(.))) %>% setkeyv(c("geoid"))
 
   # Load primary datatable; filter by scale, geoid; attach value and geography labels
-  targetfile <- paste0("WA_", as.character(dyear-4), "thru", dyear, "_") %>% paste0(dir, ., table_code, ".csv")
+  targetfile <- paste0("WA_", as.character(dyear-4), "thru", dyear, "_") %>%
+    paste0(dir, ., requested_table, ".csv")
   dt <- fread(targetfile, showProgress=FALSE) %>% setnames(tolower(colnames(.))) %>%
     .[, c("est", "moe"):=lapply(.SD, str2num), .SDcols=c("est", "moe")] %>%
     .[grepl(paste0("^C", sprintf("%02i", scale_ref$scale_id)), geoid)] %>%
     setnames("tblid", "table_id")  %>% setkeyv(c("table_id","lineno")) %>%
     .[val_lookup, category:=ldesc, on=key(.)]
+  if (!is.null(requested_lines)) {
+    dt <- dt[lineno %in% requested_lines]
+  }
   dt[, (c("res_geoid","res_label","work_geoid","work_label")):=NA_character_]
   if(scale_ref$table_type %in% c(1,3)){
     dt %<>% .[, res_geoid:=str_sub(str_extract(geoid,"US\\d+"),3L,(2+scale_ref$res_len))]

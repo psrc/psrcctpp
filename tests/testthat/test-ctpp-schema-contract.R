@@ -79,3 +79,64 @@ test_that("ctpp_shares computes shares when exactly one total is present", {
   expect_equal(rs$share[rs$category == "Bike/Ped"], 0.4)
   expect_equal(rs$share[rs$category == "Transit"], 0.6)
 })
+
+test_that("scale_code_lookup accepts variable vectors from one table", {
+  expect_no_warning(
+    rs <- scale_code_lookup("county", paste0("B202101_e", 6:8))
+  )
+
+  expect_equal(nrow(rs), 1)
+  expect_equal(rs$scale_id, 23)
+  expect_equal(rs$table_type, 2)
+})
+
+test_that("get_psrc_ctpp file fallback filters a table by requested variables", {
+  root <- tempfile("ctpp")
+  dir.create(file.path(root, "2017_2021"), recursive = TRUE)
+
+  shell <- data.table::data.table(
+    TBLID = "B202101",
+    LINENO = 6:8,
+    LDESC = c("60 to 64 years", "65 to 74 years", "75 years and over")
+  )
+  data.table::fwrite(
+    shell,
+    file.path(root, "2017_2021", "acs_ctpp_2017thru2021_table_shell.txt"),
+    sep = "|"
+  )
+
+  geo <- data.table::data.table(
+    GEOID = "53033",
+    NAME = "King County, Washington"
+  )
+  data.table::fwrite(
+    geo,
+    file.path(root, "2017_2021", "acs_ctpp_2017thru2021_all_geo.txt"),
+    sep = "|"
+  )
+
+  dt <- data.table::data.table(
+    TBLID = rep("B202101", 4),
+    LINENO = c(6L, 7L, 8L, 9L),
+    GEOID = c("C23US53033", "C23US53033", "C23US53033", "C23US53033"),
+    EST = c("10", "20", "30", "40"),
+    MOE = c("1", "2", "3", "4"),
+    SOURCE = "x"
+  )
+  data.table::fwrite(
+    dt,
+    file.path(root, "2017_2021", "WA_2017thru2021_B202101.csv")
+  )
+
+  rs <- get_psrc_ctpp(
+    "county",
+    paste0("B202101_e", 6:8),
+    2021,
+    filepath = paste0(root, "/")
+  )
+
+  expect_equal(rs$category, c("60 to 64 years", "65 to 74 years", "75 years and over"))
+  expect_equal(rs$estimate, c(10, 20, 30))
+  expect_equal(rs$work_geoid, rep("53033", 3))
+  expect_true(all(is.na(rs$res_geoid)))
+})
