@@ -167,12 +167,6 @@ within the Central Puget Sound region (or flows with one end within the
 region). To specify a narrower set–or geographies outside the region–you
 can provide a character vector using the optional
 <strong>geoids</strong> argument containing the desired FIPS codes.</p>
-<p>Notice that all results will include both res_geoid, res_label and
-work_geoid, work_label fields, but the work fields will be
-<code>NA</code> for residential tables and the residence fields will be
-<code>NA</code> for workplace tables. Categorical fields are left as
-character rather than factor datatype. Suppressed values in original
-data (“A”) tables are also coded <code>NA</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_psrc_ctpp.html">get_psrc_ctpp</a></span><span class="op">(</span><span class="st">"tract"</span>, <span class="st">"B202105"</span>, <span class="fl">2021</span><span class="op">)</span>            <span class="co"># get data</span></span>
 <span></span>
@@ -189,14 +183,42 @@ data (“A”) tables are also coded <code>NA</code>.</p>
 </div>
 </div>
 <div class="section level2">
+<h2 id="ctpp-table-data-structure">CTPP table data structure<a class="anchor" aria-label="anchor" href="#ctpp-table-data-structure"></a>
+</h2>
+<p>All CTPP tables include <strong><code>category</code></strong>,
+<strong><code>estimate</code></strong>, and
+<strong><code>estimate_moe</code></strong> fields, which are expected in
+the package’s summary functions and should not be renamed.</p>
+<p>Tables with two or three attribute variables still contain a single
+<strong><code>category</code></strong> field, with values concatenated
+by <strong><code>!!</code></strong> (similar to the Census ACS).
+Categorical fields are left as character rather than factor datatype. A
+feature of CTPP tables, is they provide a total row (beginning with
+“Total”) in each table; the package is built to take this into
+account.</p>
+<p>All tables are returned with both residential geography
+(<strong><code>res_geoid</code></strong>,
+<strong><code>res_label</code></strong>) and workplace geography
+(<strong><code>work_geoid</code></strong>,
+<strong><code>work_label</code></strong>) fields; the work fields will
+be <code>NA</code> for residential tables and the residence fields will
+be <code>NA</code> for workplace tables. Categorical fields are left as
+character rather than factor datatype. Suppressed estimates are also
+coded <code>NA</code>.</p>
+</div>
+<div class="section level2">
 <h2 id="aggregate-ctpp-data-using-custom-variables">Aggregate CTPP data using custom variables<a class="anchor" aria-label="anchor" href="#aggregate-ctpp-data-using-custom-variables"></a>
 </h2>
-<p>CTPP data tables include totals as well as category breakdowns, but
-if you wish to define either a custom category or a custom geography (as
-an aggregate of a smaller geography, e.g. tract or block group), you can
-create your own grouping variable, and then summarize using that
+<p>If you wish to define either a custom category or a custom geography
+(as an aggregate of a smaller geography, e.g. tract or block group), you
+can create your own grouping variable, and then summarize using that
 variable in the <a href="https://psrc.github.io/psrcctpp/reference/ctpp_stat.html"><strong><code>psrc_ctpp_sum()</code></strong></a>
-function, as follows.</p>
+function, as shown in the following example.</p>
+<p>Keep in mind, because CTPP tables include a total row alongside the
+component categories, any <strong><code>category</code></strong> field
+recode should maintain the <strong><code>"Total"</code></strong>
+category label. Otherwise, you may unintentionally sum the total with
+the components (resulting in an estimate twice what it should be).</p>
 <p><strong><code><a href="../reference/ctpp_stat.html">psrc_ctpp_sum()</a></code></strong> results include both
 estimates and corresponding margins of error. The
 <strong><code>incl_na=FALSE</code></strong> option can be used to remove
@@ -204,8 +226,9 @@ irrelevant categories without having to create a separate filtered data
 object first (<code>NA</code> values for relevant categories are still
 preserved).</p>
 <p>You can utilize the convenience function <a href="https://psrc.github.io/psrcctpp/reference/ctpp_shares.html"><strong><code>ctpp_shares()</code></strong></a>
-to append the share and share MOE to any CTPP dataset as long as it
-contains category totals (as is typically the case).</p>
+to append the share and share MOE to any CTPP dataset.
+<strong><code><a href="../reference/ctpp_shares.html">ctpp_shares()</a></code></strong> depends on being able to
+recognize exactly one total per grouping.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">x</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/compound.html" class="external-link">%&lt;&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>  custom_geo<span class="op">=</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/case-and-replace-when.html" class="external-link">case_when</a></span><span class="op">(</span></span>

@@ -50,12 +50,15 @@
 
 
 <dl><dt id="arg-df">df<a class="anchor" aria-label="anchor" href="#arg-df"></a></dt>
-<dd><p>dataframe, either result of get_psrc_ctpp or psrc_ctpp_stat</p></dd>
+<dd><p>dataframe, either result of get_psrc_ctpp or psrc_ctpp_stat, that retains
+the standard <code>category</code>, <code>estimate</code>, and <code>estimate_moe</code> columns.
+Category totals must remain identifiable with a value beginning with <code>"Total"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>dataframe with share &amp; share_moe</p>
+    <p>dataframe with share &amp; share_moe. If <code>ctpp_shares()</code> cannot identify
+exactly one total row per group, it warns and returns <code>df</code> unchanged.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

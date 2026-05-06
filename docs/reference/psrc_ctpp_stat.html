@@ -50,7 +50,9 @@
 
 
 <dl><dt id="arg-df">df<a class="anchor" aria-label="anchor" href="#arg-df"></a></dt>
-<dd><p>result of get_psrc_ctpp function</p></dd>
+<dd><p>result of get_psrc_ctpp function or a derived table that still preserves
+the package's standard columns, including <code>table_id</code>, <code>category</code>,
+<code>estimate</code>, and <code>estimate_moe</code></p></dd>
 
 
 <dt id="arg-group-vars">group_vars<a class="anchor" aria-label="anchor" href="#arg-group-vars"></a></dt>
@@ -58,7 +60,8 @@
 
 
 <dt id="arg-stat-type">stat_type<a class="anchor" aria-label="anchor" href="#arg-stat-type"></a></dt>
-<dd><p>for now, "sum" is only option</p></dd>
+<dd><p>summary statistic to compute. Supported values are
+<code>"sum"</code> and <code>"median"</code>.</p></dd>
 
 
 <dt id="arg-incl-na">incl_na<a class="anchor" aria-label="anchor" href="#arg-incl-na"></a></dt>

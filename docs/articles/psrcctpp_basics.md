@@ -100,13 +100,6 @@ region). To specify a narrower set–or geographies outside the region–you
 can provide a character vector using the optional **geoids** argument
 containing the desired FIPS codes.
 
-Notice that all results will include both res_geoid, res_label and
-work_geoid, work_label fields, but the work fields will be `NA` for
-residential tables and the residence fields will be `NA` for workplace
-tables. Categorical fields are left as character rather than factor
-datatype. Suppressed values in original data (“A”) tables are also coded
-`NA`.
-
 ``` r
 
 x <- get_psrc_ctpp("tract", "B202105", 2021)            # get data
@@ -124,15 +117,40 @@ mutate(x, tract=str_extract(work_label, "[\\.\\d]+")) %>%  # fit in frame
     ## 5:     82 Car, truck, or van -- In a 3-person carpool      120
     ## 6:     82 Car, truck, or van -- In a 4-person carpool       60
 
+## CTPP table data structure
+
+All CTPP tables include **`category`**, **`estimate`**, and
+**`estimate_moe`** fields, which are expected in the package’s summary
+functions and should not be renamed.
+
+Tables with two or three attribute variables still contain a single
+**`category`** field, with values concatenated by **`!!`** (similar to
+the Census ACS). Categorical fields are left as character rather than
+factor datatype. A feature of CTPP tables, is they provide a total row
+(beginning with “Total”) in each table; the package is built to take
+this into account.
+
+All tables are returned with both residential geography
+(**`res_geoid`**, **`res_label`**) and workplace geography
+(**`work_geoid`**, **`work_label`**) fields; the work fields will be
+`NA` for residential tables and the residence fields will be `NA` for
+workplace tables. Categorical fields are left as character rather than
+factor datatype. Suppressed estimates are also coded `NA`.
+
 ## Aggregate CTPP data using custom variables
 
-CTPP data tables include totals as well as category breakdowns, but if
-you wish to define either a custom category or a custom geography (as an
-aggregate of a smaller geography, e.g. tract or block group), you can
+If you wish to define either a custom category or a custom geography (as
+an aggregate of a smaller geography, e.g. tract or block group), you can
 create your own grouping variable, and then summarize using that
 variable in the
 [**`psrc_ctpp_sum()`**](https://psrc.github.io/psrcctpp/reference/ctpp_stat.html)
-function, as follows.
+function, as shown in the following example.
+
+Keep in mind, because CTPP tables include a total row alongside the
+component categories, any **`category`** field recode should maintain
+the **`"Total"`** category label. Otherwise, you may unintentionally sum
+the total with the components (resulting in an estimate twice what it
+should be).
 
 **[`psrc_ctpp_sum()`](https://psrc.github.io/psrcctpp/reference/ctpp_stat.md)**
 results include both estimates and corresponding margins of error. The
@@ -142,8 +160,9 @@ values for relevant categories are still preserved).
 
 You can utilize the convenience function
 [**`ctpp_shares()`**](https://psrc.github.io/psrcctpp/reference/ctpp_shares.html)
-to append the share and share MOE to any CTPP dataset as long as it
-contains category totals (as is typically the case).
+to append the share and share MOE to any CTPP dataset.
+**[`ctpp_shares()`](https://psrc.github.io/psrcctpp/reference/ctpp_shares.md)**
+depends on being able to recognize exactly one total per grouping.
 
 ``` r
 

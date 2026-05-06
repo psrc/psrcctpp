@@ -14,7 +14,9 @@ psrc_ctpp_stat(df, group_vars, stat_type = "sum", incl_na = FALSE)
 
 - df:
 
-  result of get_psrc_ctpp function
+  result of get_psrc_ctpp function or a derived table that still
+  preserves the package's standard columns, including `table_id`,
+  `category`, `estimate`, and `estimate_moe`
 
 - group_vars:
 
@@ -22,7 +24,8 @@ psrc_ctpp_stat(df, group_vars, stat_type = "sum", incl_na = FALSE)
 
 - stat_type:
 
-  for now, "sum" is only option
+  summary statistic to compute. Supported values are `"sum"` and
+  `"median"`.
 
 - incl_na:
 

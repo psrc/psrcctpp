@@ -8,6 +8,7 @@
 - [`ctpp_shares()`](https://psrc.github.io/psrcctpp/reference/ctpp_shares.md)
   : Add shares to CTPP table
 - [`psrc_ctpp_sum()`](https://psrc.github.io/psrcctpp/reference/ctpp_stat.md)
+  [`psrc_ctpp_median()`](https://psrc.github.io/psrcctpp/reference/ctpp_stat.md)
   : CTPP summary statistics
 - [`ctpp_tblsearch()`](https://psrc.github.io/psrcctpp/reference/ctpp_tblsearch.md)
   : Search CTPP table codes
