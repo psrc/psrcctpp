@@ -9,9 +9,9 @@ Generate CTPP medians
 ## Usage
 
 ``` r
-psrc_ctpp_sum(df, group_vars = NULL, incl_na = TRUE)
+psrc_ctpp_sum(df, group_vars = "category", incl_na = TRUE)
 
-psrc_ctpp_median(df, group_vars = NULL, incl_na = TRUE)
+psrc_ctpp_median(df, group_vars = "category", incl_na = TRUE)
 ```
 
 ## Arguments
@@ -39,4 +39,7 @@ summaries preserve the standard `estimate_moe` column and fill it with
 If you recode `category`, preserve exactly one total row per group so
 downstream helpers such as
 [`ctpp_shares()`](https://psrc.github.io/psrcctpp/reference/ctpp_shares.md)
-can still identify the denominator.
+can still identify the denominator. Sum summaries with
+`group_vars = NULL` warn when the input still contains a `"Total"` row
+alongside component rows, because that full collapse will add the total
+to its parts.
