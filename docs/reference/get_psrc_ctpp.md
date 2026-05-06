@@ -5,7 +5,7 @@ Retrieve CTPP data
 ## Usage
 
 ``` r
-get_psrc_ctpp(scale, table_code, dyear = 2016, geoids = NULL, filepath = NULL)
+get_psrc_ctpp(scale, table_code, dyear = 2021, geoids = NULL, filepath = NULL)
 ```
 
 ## Arguments
@@ -22,7 +22,7 @@ get_psrc_ctpp(scale, table_code, dyear = 2016, geoids = NULL, filepath = NULL)
 
 - dyear:
 
-  last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+  last of 5-year CTPP span, e.g. 2021 for 2017-2021 survey
 
 - geoids:
 

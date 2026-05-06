@@ -16,7 +16,7 @@ ctpp_varsearch(table_code, year)
 
 - year:
 
-  last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+  last of 5-year CTPP span, e.g. e.g. 2021 for 2017-2021 survey
 
 ## Value
 

@@ -5,7 +5,7 @@ Fetch ftp-format CTPP data from network location Helper to get_psrc_ctpp
 ## Usage
 
 ``` r
-fetch_ctpp_from_file(scale, table_code, dyear = 2016, filepath = "default")
+fetch_ctpp_from_file(scale, table_code, dyear, filepath = "default")
 ```
 
 ## Arguments
@@ -22,7 +22,7 @@ fetch_ctpp_from_file(scale, table_code, dyear = 2016, filepath = "default")
 
 - dyear:
 
-  last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+  last of 5-year CTPP span, e.g. 2021 for 2017-2021 survey
 
 - filepath:
 

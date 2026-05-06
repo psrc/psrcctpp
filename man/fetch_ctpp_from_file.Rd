@@ -5,7 +5,7 @@
 \title{Fetch ftp-format CTPP data from network location
 Helper to get_psrc_ctpp}
 \usage{
-fetch_ctpp_from_file(scale, table_code, dyear = 2016, filepath = "default")
+fetch_ctpp_from_file(scale, table_code, dyear, filepath = "default")
 }
 \arguments{
 \item{scale}{"county", "place", or "tract" for residence/workplace tables;
@@ -13,7 +13,7 @@ fetch_ctpp_from_file(scale, table_code, dyear = 2016, filepath = "default")
 
 \item{table_code}{requested data table as string, e.g. "A302103"}
 
-\item{dyear}{last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey}
+\item{dyear}{last of 5-year CTPP span, e.g. 2021 for 2017-2021 survey}
 
 \item{filepath}{optional network location of downloaded ftp CTPP files}
 }

@@ -9,7 +9,7 @@ ctpp_varsearch(table_code, year)
 \arguments{
 \item{table_code}{requested data table as string, e.g. "A302103"}
 
-\item{year}{last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey}
+\item{year}{last of 5-year CTPP span, e.g. e.g. 2021 for 2017-2021 survey}
 }
 \value{
 data table

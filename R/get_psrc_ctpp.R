@@ -82,7 +82,7 @@ api_gofer <- function(url, page_size = 1000L) {
 #'
 #' @param prefix 2-character pattern: see \code{vignette("psrcctpp_basics", package = "psrcctpp")}
 #' @param regex string pattern to match table description
-#' @param year last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+#' @param year last of 5-year CTPP span, e.g. 2021 for 2017-2021 survey
 #' @return data table
 #'
 #' @import data.table
@@ -110,7 +110,7 @@ ctpp_tblsearch <- function(prefix, regex, year){
 #' Search CTPP variable codes
 #'
 #' @param table_code requested data table as string, e.g. "A302103"
-#' @param year last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+#' @param year last of 5-year CTPP span, e.g. e.g. 2021 for 2017-2021 survey
 #' @return data table
 #'
 #' @import data.table
@@ -153,13 +153,13 @@ return(scale_refs)
 #' @param scale "county", "place", or "tract" for residence/workplace tables;
 #' "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
 #' @param table_code requested data table as string, e.g. "A302103"
-#' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+#' @param dyear last of 5-year CTPP span, e.g. 2021 for 2017-2021 survey
 #' @param filepath optional network location of downloaded ftp CTPP files
 #' @return data table
 #' @importFrom stringr str_sub str_extract str_replace
 #' @importFrom dplyr if_else
 #' @import data.table
-fetch_ctpp_from_file <- function(scale, table_code, dyear=2016, filepath="default"){
+fetch_ctpp_from_file <- function(scale, table_code, dyear, filepath="default"){
   scale_filter <- scale_label <- dir <- targetfile <- geoid <- ldesc <- NULL    # Declare for documentation purposes
   name <- lineno <- table_type <- category <- NULL
   #rgeo <- wgeo <- geo_lookup <- GEOID <- LDESC <- NULL
@@ -227,7 +227,7 @@ fetch_ctpp_from_file <- function(scale, table_code, dyear=2016, filepath="defaul
 #' @param scale "county", "place", or "tract" for residence/workplace tables;
 #' "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
 #' @param table_code requested data table as string, e.g. "A302103"
-#' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+#' @param dyear last of 5-year CTPP span, e.g. e.g. 2021 for 2017-2021 survey
 #' @param geoids optional string vector of GEOID codes to limit the table
 #' @return data table
 #' @importFrom stringr str_sub str_extract str_replace str_split
@@ -458,7 +458,7 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids) {
 #' @param scale "county", "place", or "tract" for residence/workplace tables;
 #' "county-county", "place-place", "place-county", "county-place", or "tract-tract" for O-D tables
 #' @param table_code requested data table as string, e.g. "A302103"
-#' @param dyear last of 5-year CTPP span, e.g. 2016 for ctpp1216 survey
+#' @param dyear last of 5-year CTPP span, e.g. 2021 for 2017-2021 survey
 #' @param geoids optional string vector of GEOID codes to limit the table
 #' @param filepath optional network location of downloaded ftp CTPP files
 #' @return A data table with stable column names used by downstream helpers.
@@ -476,7 +476,7 @@ fetch_ctpp_from_api <- function(scale, table_code, dyear, geoids) {
 #' @importFrom psrccensus get_psrc_places
 #' @importFrom rlang is_empty
 #' @export
-get_psrc_ctpp <- function(scale, table_code, dyear = 2016, geoids = NULL, filepath = NULL) {
+get_psrc_ctpp <- function(scale, table_code, dyear = 2021, geoids = NULL, filepath = NULL) {
   # Declare variables (to avoid package warnings)
   res_geoid <- work_geoid <- GEOID <- NULL
 
@@ -497,12 +497,12 @@ get_psrc_ctpp <- function(scale, table_code, dyear = 2016, geoids = NULL, filepa
     stop("'table_code' must be a character string", call. = FALSE)
   }
 
-  if (dyear < 2021 & any(grepl("^C", table_code))) {
-    stop("Condensed ('C') tables not available prior to 2017-21 dataset", call. = FALSE)
+  if (dyear < 2016 & any(grepl("^C", table_code))) {
+    stop("Condensed ('C') tables not available prior to 2012-16 dataset", call. = FALSE)
   }
 
   if (dyear > 2016 & any(grepl("^A", table_code))) {
-    stop("Unperturbed ('A') tables discontinued after 2011-16 dataset", call. = FALSE)
+    stop("Unperturbed ('A') tables discontinued after 2012-16 dataset", call. = FALSE)
   }
 
   if (!all(grepl("^[ABC][0-3]\\d{3,5}\\w{1,2}(_(e|m)\\d+)?$", table_code))) {
