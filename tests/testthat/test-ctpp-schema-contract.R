@@ -19,6 +19,24 @@ test_that("psrc_ctpp_sum warns when grouped categories lose an identifiable tota
   )
 })
 
+test_that("psrc_ctpp_sum aggregates repeated geography totals without warning", {
+  df <- rbind(
+    sample_ctpp_table(),
+    transform(
+      sample_ctpp_table(),
+      estimate = c(12, 5, 7),
+      estimate_moe = c(1.2, 0.5, 0.7),
+      custom_geo = "Uptown"
+    )
+  )
+
+  expect_no_warning(rs <- psrc_ctpp_sum(df))
+  expect_identical(colnames(rs), c("table_id", "category", "estimate", "estimate_moe"))
+  expect_equal(rs$estimate[rs$category == "Total"], 22)
+  expect_no_warning(shares <- ctpp_shares(rs))
+  expect_equal(shares$share[shares$category == "Total"], 1)
+})
+
 test_that("psrc_ctpp_stat warns when a full sum collapses totals with components", {
   df <- sample_ctpp_table()
 

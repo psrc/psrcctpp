@@ -23,6 +23,7 @@ psrc_ctpp_is_total_category <- function(category){
 }
 
 psrc_ctpp_total_summary <- function(df, group_cols = character()){
+  category <- NULL
   dt <- as.data.table(df)
   if(length(group_cols) > 0L){
     dt[, .(
@@ -38,6 +39,7 @@ psrc_ctpp_total_summary <- function(df, group_cols = character()){
 }
 
 psrc_ctpp_warn_total_contract <- function(df, fn_name, group_cols = character()){
+  category_n <- total_n <- NULL
   if(nrow(df) == 0L || !"category" %in% colnames(df)){
     return(invisible(NULL))
   }
@@ -77,6 +79,7 @@ psrc_ctpp_warn_total_contract <- function(df, fn_name, group_cols = character())
 }
 
 psrc_ctpp_warn_total_collapse <- function(df, fn_name, group_cols = "table_id"){
+  category_n <- total_n <- NULL
   if(nrow(df) == 0L || !"category" %in% colnames(df)){
     return(invisible(NULL))
   }
@@ -111,6 +114,8 @@ psrc_ctpp_stat <- function(df, group_vars, stat_type="sum", incl_na=FALSE){
   table_id <- category <- estimate <- estimate_moe <- NULL
   sum_estimate <- sum_moe <- median_estimate <- NULL
   keep_existing <- identical(group_vars, "keep_existing")
+  group_vars_clean <- if(is.null(group_vars) || keep_existing) group_vars else unique(group_vars)
+  group_vars_no_category <- if(is.null(group_vars_clean) || keep_existing) group_vars_clean else setdiff(group_vars_clean, "category")
   if(!stat_type %in% c("sum", "median")){
     stop(
       "psrc_ctpp_stat(): stat_type must be one of 'sum' or 'median'.",
@@ -118,24 +123,26 @@ psrc_ctpp_stat <- function(df, group_vars, stat_type="sum", incl_na=FALSE){
     )
   }
   psrc_ctpp_require_cols(df, c("table_id", "category", "estimate", "estimate_moe"), "psrc_ctpp_stat")
-  if(!is.null(group_vars) && !keep_existing){
-    psrc_ctpp_require_cols(df, group_vars, "psrc_ctpp_stat")
+  if(!is.null(group_vars_clean) && !keep_existing){
+    psrc_ctpp_require_cols(df, group_vars_clean, "psrc_ctpp_stat")
   }
   if(!keep_existing){df %<>% ungroup()}                                                             # "keep_existing" is power-user option to maintain more complex groupings;
   if(stat_type=="sum"){
-    psrc_ctpp_warn_total_contract(df, "psrc_ctpp_stat", unique(c("table_id", group_vars)))
-    if(is.null(group_vars)){
+    if(is.null(group_vars_clean)){
       psrc_ctpp_warn_total_collapse(df, "psrc_ctpp_stat")
     }
   }
-  if(!is.null(group_vars) && !keep_existing){                                                       # -- otherwise the package ungroups before and afterward
-    if(incl_na==FALSE){df %<>% filter(if_all(all_of(group_vars), ~ !is.na(.)))}                    # Allows users to exclude w/o removing observations from the data object itself
-    df %<>% group_by(across(c(table_id, all_of(group_vars), category)))
+  if(!is.null(group_vars_clean) && !keep_existing){                                                 # -- otherwise the package ungroups before and afterward
+    if(incl_na==FALSE){df %<>% filter(if_all(all_of(group_vars_clean), ~ !is.na(.)))}              # Allows users to exclude w/o removing observations from the data object itself
+    df %<>% group_by(across(c(table_id, all_of(group_vars_no_category), category)))
   }
   if(stat_type=="sum"){
     rs <- suppressMessages(summarize(df, sum_estimate=sum(estimate, na.rm=TRUE),
             sum_moe=moe_sum(estimate_moe, estimate)) %>% ungroup()) %>%
       rename(estimate=sum_estimate, estimate_moe=sum_moe)
+    if(!keep_existing){
+      psrc_ctpp_warn_total_contract(rs, "psrc_ctpp_stat", c("table_id", group_vars_no_category))
+    }
   }else if(stat_type=="median"){
     rs <- suppressMessages(summarize(df,
             median_estimate=stats::median(estimate, na.rm=TRUE)) %>% ungroup()) %>%
@@ -198,6 +205,7 @@ psrc_ctpp_median <- function(df, group_vars="category", incl_na=TRUE){
 #' @export
 ctpp_shares <- function(df){
   category <- estimate <- estimate_moe <- total <- total_moe <- totals <- NULL
+  category_n <- total_n <- NULL
   psrc_ctpp_require_cols(df, c("category", "estimate", "estimate_moe"), "ctpp_shares")
 
   share_group_cols <- setdiff(colnames(df), c("table_id", "line_id", "category", "estimate", "estimate_moe"))

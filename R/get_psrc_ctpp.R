@@ -160,9 +160,10 @@ return(scale_refs)
 #' @importFrom dplyr if_else
 #' @import data.table
 fetch_ctpp_from_file <- function(scale, table_code, dyear=2016, filepath="default"){
-  scale_filter <- scale_label <- dir <- targetfile <- geoid <- ldesc <- name <- NULL  # Declare for documentation purposes
+  scale_filter <- scale_label <- dir <- targetfile <- geoid <- ldesc <- NULL    # Declare for documentation purposes
+  name <- lineno <- table_type <- category <- NULL
   #rgeo <- wgeo <- geo_lookup <- GEOID <- LDESC <- NULL
-  res_geoid <- work_geoid <- res_label <- work_label <- table_type <- category <- NULL
+  res_geoid <- work_geoid <- res_label <- work_label <- NULL
   requested_table <- unique(str_sub(table_code, 1L, 7L))
   if (length(requested_table) != 1) {
     stop("Requested variables must come from the same table.", call. = FALSE)
